@@ -114,4 +114,11 @@ public interface TreeNode<K extends Serializable,V> {
 	 */
 	TreeNode<K, V> get(TreePath<K> path, SearchStrategy strategy);
 
+	/*
+	 * find unique key
+	 */
+	TreeNode<K,V> find( K uniqueKey );
+
+	TreeNode<K,V> find( K uniqueKey, SearchStrategy strategy);
+
 }

@@ -1577,6 +1577,42 @@ public class MutableTreeNode<K extends Serializable,V> implements TreeNode<K, V>
 		return ret;
 	}
 
+
+
+	@Override
+	public MutableTreeNode<K, V> find(K uniqueKey) {
+		return find( uniqueKey, this.breadthFirstEnumeration());
+	}
+
+	@Override
+	public MutableTreeNode<K, V> find(K uniqueKey, SearchStrategy strategy) {
+		if (strategy == SearchStrategy.PRE_ORDER)
+			return find(uniqueKey, this.preOrderEnumeration());
+		else
+			return find(uniqueKey);
+	}
+
+	/**
+	 * Returns the node based on breadthFirstEnumaration
+	 * debug:
+	 * System.out.println( level+":"+checkNode.key + " " + checkNodeLevel );
+	 */
+	private MutableTreeNode<K, V> find(K uniqueKey, Iterator<MutableTreeNode<K, V>> enumeration) {
+		MutableTreeNode<K,V> ret = null;
+		Iterator<MutableTreeNode<K,V>>  iter = enumeration;
+		while (uniqueKey != null && iter.hasNext()) {
+			MutableTreeNode<K, V> checkNode = iter.next();
+			boolean keyMatch = uniqueKey.equals(checkNode.key);
+			/* key matches */
+			if (keyMatch) {
+				ret = checkNode;
+				break;
+			}
+		}
+		return ret;
+	}
+
+
 	/**
 	 * Generates a pseudo pyramid -based tree diagram
 	 * starting from this node

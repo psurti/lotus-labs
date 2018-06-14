@@ -38,7 +38,6 @@ public class MutableTreeNodeTest {
 		treeNode = mutableTreeNode;
 	}
 
-
 	public MutableTreeNode<String,String> createStringTreeNode(String[] pairs) {
 
 		/*

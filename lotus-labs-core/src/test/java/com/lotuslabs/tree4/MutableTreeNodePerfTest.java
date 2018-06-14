@@ -11,6 +11,8 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
+import com.lotuslabs.tree4.TreeNode.SearchStrategy;
+
 @RunWith(JUnit4.class)
 public class MutableTreeNodePerfTest {
 
@@ -20,26 +22,28 @@ public class MutableTreeNodePerfTest {
 	@Before
 	public void setUp() {
 		List<String> mappings = new ArrayList<>();
-		String alpha = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-		String parents = "0ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-		int level = 2;
-		int id =0;
-		for( char c : parents.toCharArray()) {
-			for (char a : alpha.toCharArray()) {
-				if (a == c) continue;
-				String rel0 = (id+100) + ":" + String.valueOf(a) + (id);
-				String rel = String.valueOf(a) + (id) + ":" + String.valueOf(c);
-				System.out.println( rel );
-				mappings.add(rel0);
-				mappings.add(rel);
-				id++;
-			}
-		}
+		String loop0 = "0";
+		String loop1 = "0ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+		createLevel(mappings, loop1, loop0, 3);
+		long start = System.currentTimeMillis();
 		mutableTreeNode = createStringTreeNode(mappings.toArray(new String[0]));
+		long stop = System.currentTimeMillis();
+		System.out.println( "createTree time:" + (stop-start));
 		treeNode = mutableTreeNode;
 
-		System.out.println( "################################");
-		System.out.println( treeNode.get(new TreePath<>(new String[] { "K0","KA", "KB26", "K126"})));
+		System.out.println( "######################");
+
+	}
+
+
+	private void createLevel(List<String> mappings, String loop, String parent, int level) {
+		if (level == 0)
+			return;
+		for( char x : loop.toCharArray()) {
+			mappings.add(""+x+parent+":"+parent);
+			parent = ""+x+parent;
+			createLevel(mappings, loop, parent, level-1);
+		}
 	}
 
 
@@ -95,6 +99,45 @@ public class MutableTreeNodePerfTest {
 		Assert.assertTrue(actual, true);
 	}
 
+	@Test(timeout=50)
+	public void testGet() {
+		long start = System.currentTimeMillis();
+		String[] query = {
+				"K0",
+				"K00",
+				"KA00",
+				"KBA00",
+				"KCBA00",
+				"K0CBA00",
+				"KA0CBA00",
+				"KBA0CBA00",
+				"KCBA0CBA00",
+				"K0CBA0CBA00"
+		};
+		System.out.println( treeNode.get(new TreePath<>(query)));
+		long stop = System.currentTimeMillis();
+		System.out.println( "get time(ms): " + (stop-start));
+	}
+
+	@Test(timeout=50)
+	public void testFind_BreadthFirst() {
+		long start = System.currentTimeMillis();
+		//String q="K0CBA0CBA00";
+		String q="KQPONMLKJIHGFEDCBA0ZYXWVUTSRQPONMLKJIHGFEDCBA0ZYXWVUTSRQPONMLKJIHGFEDCBA00";
+		System.out.println( treeNode.find(q, SearchStrategy.BREADTH_FIRST) );
+		long stop = System.currentTimeMillis();
+		System.out.println( "BF find time(ms): " + (stop-start));
+	}
+
+	@Test(timeout=50)
+	public void testFind_PreOrder() {
+		long start = System.currentTimeMillis();
+		//String q="K0CBA0CBA00";
+		String q="KQPONMLKJIHGFEDCBA0ZYXWVUTSRQPONMLKJIHGFEDCBA0ZYXWVUTSRQPONMLKJIHGFEDCBA00";
+		System.out.println( treeNode.find(q, SearchStrategy.PRE_ORDER) );
+		long stop = System.currentTimeMillis();
+		System.out.println( "PO find time(ms): " + (stop-start));
+	}
 
 	public static void main(String[] args) {
 		new MutableTreeNodePerfTest().setUp();
