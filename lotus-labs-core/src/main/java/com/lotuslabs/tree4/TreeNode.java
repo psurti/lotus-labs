@@ -114,11 +114,24 @@ public interface TreeNode<K extends Serializable,V> {
 	 */
 	TreeNode<K, V> get(TreePath<K> path, SearchStrategy strategy);
 
-	/*
-	 * find unique key
+	/**
+	 * Returns the tree-node based on an unique key
+	 * in the entire tree. If the tree node is not found
+	 * it will return null. It uses breadth-first enumeration
 	 */
 	TreeNode<K,V> find( K uniqueKey );
 
+	/**
+	 * Returns the tree-node based on an unique key
+	 * in the entire tree. If the tree node is not found
+	 * it will return null. The enumeration used is based
+	 * on the search strategy with support of pre-order
+	 * or breadth-first strategy
+	 *
+	 * @param uniqueKey is a unique key across the entire tree
+	 * @param strategy allows pre-order or breadth-first enumeration
+	 * @return null if node not found
+	 */
 	TreeNode<K,V> find( K uniqueKey, SearchStrategy strategy);
 
 }
