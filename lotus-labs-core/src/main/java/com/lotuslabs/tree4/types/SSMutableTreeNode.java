@@ -19,13 +19,10 @@
 
 package com.lotuslabs.tree4.types;
 
-import static org.junit.Assert.assertEquals;
-
 import java.util.HashMap;
 import java.util.Map;
 
 import com.lotuslabs.tree4.MutableTreeNode;
-import com.lotuslabs.tree4.TreePath;
 
 /**
  * TreeNode with K as String and V as String
@@ -108,25 +105,5 @@ public class SSMutableTreeNode extends MutableTreeNode<String, String> {
 				}
 			}
 			return root;
-	}
-
-	public static void main(String[] args) {
-		SSMutableTreeNode mutableTreeNode = valueOf(new String[] {
-				"H:G", // find g; find h
-				"F:G", // find g;(found) find f
-				"G:D", // find d; (not found) - add to root; find g (found) -- add to d
-				"E:D",
-				"A:E",
-				"B:C",
-				"C:E",
-				"D:0",
-				"Z:Y",
-				"Y:X",
-				"X:0"
-		});
-
-		assertEquals(" K8:0    |___K3:D    |   |___K1:G    |   |   |___K0:H    |   |   |___K2:F    |   |___K4:E    |   |   |___K5:A    |   |   |___K7:C    |   |   |   |___K6:B    |___K11:X    |   |___K10:Y    |   |   |___K9:Z"
-				, mutableTreeNode.generateTreeOutput().replaceAll(System.lineSeparator(), " "));
-		assertEquals("E not matched", "E", mutableTreeNode.get(new TreePath<>(new String[] {"K8", "K3", "K4"})).getUserObject());
 	}
 }
