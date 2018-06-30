@@ -82,7 +82,7 @@ public class SSMutableTreeNode extends SVMutableTreeNode<String> {
 	 * @param valuePairs tuple of <child,parent> pairs
 	 * @return a mutable treenode
 	 */
-	public static SSMutableTreeNode valueOf(String[] valuePairs) {
+	public static SSMutableTreeNode withValues(String[] valuePairs) {
 		return valueOf(valuePairs, (String value, Integer seq)-> "K"+seq, ':');
 	}
 

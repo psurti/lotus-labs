@@ -25,7 +25,7 @@ public class MutableTreeNodePerfTest {
 		String loop1 = "0ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 		createLevel(mappings, loop1, loop0, 3);
 		long start = System.currentTimeMillis();
-		mutableTreeNode = SSMutableTreeNode.valueOf(mappings.toArray(new String[0]));
+		mutableTreeNode = SSMutableTreeNode.withValues(mappings.toArray(new String[0]));
 		long stop = System.currentTimeMillis();
 		System.out.println( "createTree time:" + (stop-start));
 		treeNode = mutableTreeNode;

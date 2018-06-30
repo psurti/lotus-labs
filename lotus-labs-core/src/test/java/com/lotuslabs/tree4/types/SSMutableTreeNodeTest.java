@@ -18,7 +18,7 @@ public class SSMutableTreeNodeTest {
 
 	@Before
 	public void setUp() {
-		mutableTreeNode = SSMutableTreeNode.valueOf(new String[] {
+		mutableTreeNode = SSMutableTreeNode.withValues(new String[] {
 				"H:G", // find g; find h
 				"F:G", // find g;(found) find f
 				"G:D", // find d; (not found) - add to root; find g (found) -- add to d
