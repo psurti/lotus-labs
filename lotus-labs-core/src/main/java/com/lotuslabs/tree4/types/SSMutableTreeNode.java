@@ -58,11 +58,62 @@ public class SSMutableTreeNode extends MutableTreeNode<String, String> {
 		super(userObject);
 	}
 
+
+	/**
+	 * Construct treenode based on key pairs
+	 *
+	 * @param keyPairs
+	 * @param delimiter
+	 * @return mutable tree node based tuples of key pairs
+	 */
+	public static SSMutableTreeNode valueOf(String[] keyPairs, char delimiter) {
+		SSMutableTreeNode root = null;
+
+		Map<String,SSMutableTreeNode> ledger = new HashMap<>();
+		for (int i = 0; i < keyPairs.length; i++ ) {
+			String[] parts = keyPairs[i].split("\\" + delimiter);
+
+			if (! ledger.containsKey(parts[0]) ) {
+				ledger.put(parts[0], new SSMutableTreeNode(parts[0], null));
+			}
+
+			// find if child exists
+			// find if parent exists
+			SSMutableTreeNode childNode = ledger.get(parts[0]);
+
+			if (! ledger.containsKey(parts[1])) {
+				ledger.put(parts[1], new SSMutableTreeNode(parts[1],null));
+			}
+
+			SSMutableTreeNode parentNode = ledger.get(parts[1]);
+
+			parentNode.add(childNode);
+
+			if (parentNode.getParent() == null && parentNode != root) {
+				root = parentNode;
+			}
+		}
+		return root;
+	}
+
+	/**
+	 * Construct tree node based on value pairs and default key generation
+	 *
+	 * @param valuePairs tuple of <child,parent> pairs
+	 * @return a mutable treenode
+	 */
 	public static SSMutableTreeNode valueOf(String[] valuePairs) {
 		return valueOf(valuePairs, (String value, Integer seq)-> "K"+seq, ':');
 	}
 
-
+	/**
+	 * Construct tree node based on value pairs and supplied key generation
+	 *
+	 * @param valuePairs tuple of <child,parent> pairs
+	 * @param keyGen key generator
+	 * @param delimiter
+	 * @return a mutable treenode
+	 */
 	public static SSMutableTreeNode valueOf(String[] valuePairs, KeyGenerator<String,String,Integer> keyGen, char delimiter ) {
 
 		/*
