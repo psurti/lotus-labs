@@ -106,7 +106,7 @@ public class SSMutableTreeNode extends SVMutableTreeNode<String> {
 		 */
 		SSMutableTreeNode root = null;
 		if (keyGen==null)
-			keyGen = (String value, Integer seq)-> "K"+seq;
+			keyGen = (String value, Integer seq)-> "K"+value;
 
 			Map<String,SSMutableTreeNode> ledger = new HashMap<>();
 			int k = 0;
@@ -135,6 +135,32 @@ public class SSMutableTreeNode extends SVMutableTreeNode<String> {
 					root = parentNode;
 				}
 			}
+
 			return root;
+	}
+
+	public static SSMutableTreeNode withPaths(String[] paths, char delimiter) {
+		SSMutableTreeNode root = new SSMutableTreeNode();
+		SSMutableTreeNode matchNode = root;
+		for (int i = 0; i < paths.length; i++) {
+			String singlePath = paths[i];
+			String[] strTreePaths = singlePath.split("\\"+delimiter);
+			for (int j = 0; j < paths.length; j++) {
+				SSMutableTreeNode foundNode = matchNode.find(paths[j], matchNode.iterator());
+				if (foundNode == null) {
+					foundNode = new SSMutableTreeNode(strTreePaths[j], null);
+					matchNode.add(foundNode);
+				}
+				matchNode = foundNode;
+			}
+
+		}
+		if (root.childCount() > 1 )
+			throw new IllegalArgumentException( "no single root" );
+
+		SSMutableTreeNode newRoot = root.getFirstChild();
+		if (newRoot != null ) newRoot.removeFromParent();
+		return newRoot;
+
 	}
 }

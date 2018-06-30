@@ -49,4 +49,11 @@ public class SSMutableTreeNodeTest {
 
 	}
 
+	@Test
+	public void testGet_type() {
+		Class<?> actualClass = mutableTreeNode.get(new TreePath<>(new String[] {"K8", "K3", "K4"})).getClass();
+		System.out.println( "actualClass=" + actualClass);
+		assertEquals(SSMutableTreeNode.class, actualClass);
+	}
+
 }

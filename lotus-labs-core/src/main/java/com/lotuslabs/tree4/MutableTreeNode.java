@@ -200,9 +200,10 @@ public class MutableTreeNode<K extends Serializable,V> implements TreeNode<K, V>
 	 *
 	 * @return  this node's parent TreeNode, or null if this node has no parent
 	 */
+	@SuppressWarnings("unchecked")
 	@Override
-	public MutableTreeNode<K,V> getParent() {
-		return parent;
+	public <T extends TreeNode<K,V>> T getParent() {
+		return (T) parent;
 	}
 
 	/**
@@ -213,12 +214,13 @@ public class MutableTreeNode<K extends Serializable,V> implements TreeNode<K, V>
 	 *                                          is out of bounds
 	 * @return  the TreeNode in this node's child array at  the specified index
 	 */
+	@SuppressWarnings("unchecked")
 	@Override
-	public MutableTreeNode<K,V> getChildAt(int index) {
+	public <T extends TreeNode<K,V>> T getChildAt(int index) {
 		if (children == null) {
 			throw new ArrayIndexOutOfBoundsException(NODE_HAS_NO_CHILDREN);
 		}
-		return children.get(index);
+		return (T) children.get(index);
 	}
 
 	/**
@@ -280,11 +282,11 @@ public class MutableTreeNode<K extends Serializable,V> implements TreeNode<K, V>
 	 */
 	@SuppressWarnings("unchecked")
 	@Override
-	public Iterator<MutableTreeNode<K,V>> iterator() {
+	public <T extends TreeNode<K,V>> Iterator<T> iterator() {
 		if (children == null) {
 			return Collections.emptyIterator();
 		} else {
-			return children.iterator();
+			return (Iterator<T>) children.iterator();
 		}
 	}
 
@@ -677,7 +679,8 @@ public class MutableTreeNode<K extends Serializable,V> implements TreeNode<K, V>
 	 * @see     #isNodeAncestor
 	 * @return  the root of the tree that contains this node
 	 */
-	public MutableTreeNode<K,V> getRoot() {
+	@SuppressWarnings("unchecked")
+	public <T extends TreeNode<K,V>> T getRoot() {
 		MutableTreeNode<K,V> ancestor = this;
 		MutableTreeNode<K,V> previous;
 
@@ -686,7 +689,7 @@ public class MutableTreeNode<K extends Serializable,V> implements TreeNode<K, V>
 			ancestor = ancestor.getParent();
 		} while (ancestor != null);
 
-		return previous;
+		return (T) previous;
 	}
 
 
@@ -712,7 +715,8 @@ public class MutableTreeNode<K extends Serializable,V> implements TreeNode<K, V>
 	 * @return  the node that follows this node in a preorder traversal, or
 	 *          null if this node is last
 	 */
-	public MutableTreeNode<K,V> getNextNode() {
+	@SuppressWarnings("unchecked")
+	public <T extends TreeNode<K,V>> T getNextNode() {
 		if (childCount() == 0) {
 			// No children, so look for nextSibling
 			MutableTreeNode<K,V> nextSibling = getNextSibling();
@@ -727,13 +731,13 @@ public class MutableTreeNode<K extends Serializable,V> implements TreeNode<K, V>
 
 					nextSibling = aNode.getNextSibling();
 					if (nextSibling != null) {
-						return nextSibling;
+						return (T) nextSibling;
 					}
 
 					aNode = aNode.getParent();
 				} while(true);
 			} else {
-				return nextSibling;
+				return (T) nextSibling;
 			}
 		} else {
 			return getChildAt(0);
@@ -752,7 +756,8 @@ public class MutableTreeNode<K extends Serializable,V> implements TreeNode<K, V>
 	 * @return  the node that precedes this node in a preorder traversal, or
 	 *          null if this node is the first
 	 */
-	public MutableTreeNode<K,V> getPreviousNode() {
+	@SuppressWarnings("unchecked")
+	public <T extends TreeNode<K,V>> T getPreviousNode() {
 		MutableTreeNode<K,V> previousSibling;
 		MutableTreeNode<K,V> myParent = getParent();
 
@@ -764,11 +769,11 @@ public class MutableTreeNode<K extends Serializable,V> implements TreeNode<K, V>
 
 		if (previousSibling != null) {
 			if (previousSibling.childCount() == 0)
-				return previousSibling;
+				return (T) previousSibling;
 			else
 				return previousSibling.getLastLeaf();
 		} else {
-			return myParent;
+			return (T) myParent;
 		}
 	}
 
@@ -785,8 +790,8 @@ public class MutableTreeNode<K extends Serializable,V> implements TreeNode<K, V>
 	 */
 	@Override
 	@SuppressWarnings("unchecked")
-	public Iterator<MutableTreeNode<K,V>> preOrderEnumeration() {
-		return new PreorderEnumeration(this);
+	public  <T extends TreeNode<K,V>> Iterator<T> preOrderEnumeration() {
+		return new PreorderEnumeration<>((T)this);
 	}
 
 	/**
@@ -804,8 +809,8 @@ public class MutableTreeNode<K extends Serializable,V> implements TreeNode<K, V>
 	 */
 	@Override
 	@SuppressWarnings("unchecked")
-	public Iterator<MutableTreeNode<K,V>> postOrderEnumeration() {
-		return new PostorderEnumeration(this);
+	public <T extends TreeNode<K,V>> Iterator<T> postOrderEnumeration() {
+		return new PostorderEnumeration<>((T) this);
 	}
 
 	/**
@@ -821,8 +826,8 @@ public class MutableTreeNode<K extends Serializable,V> implements TreeNode<K, V>
 	 */
 	@Override
 	@SuppressWarnings("unchecked")
-	public Iterator<MutableTreeNode<K,V>> breadthFirstEnumeration() {
-		return new BreadthFirstEnumeration(this);
+	public <T extends TreeNode<K,V>> Iterator<T> breadthFirstEnumeration() {
+		return new BreadthFirstEnumeration<>((T)this);
 	}
 
 	/**
@@ -839,8 +844,7 @@ public class MutableTreeNode<K extends Serializable,V> implements TreeNode<K, V>
 	 * @return  an enumeration for traversing the tree in depth-first order
 	 */
 	@Override
-	@SuppressWarnings("unchecked")
-	public Iterator<MutableTreeNode<K,V>> depthFirstEnumeration() {
+	public <T extends TreeNode<K,V>> Iterator<T> depthFirstEnumeration() {
 		return postOrderEnumeration();
 	}
 
@@ -864,8 +868,9 @@ public class MutableTreeNode<K extends Serializable,V> implements TreeNode<K, V>
 	 * @return  an enumeration for following the path from an ancestor of
 	 *          this node to this one
 	 */
-	public Iterator<MutableTreeNode<K,V>> pathFromAncestorEnumeration(TreeNode<K,V> ancestor) {
-		return new PathBetweenNodesEnumeration(ancestor, this);
+	@SuppressWarnings("unchecked")
+	public <T extends TreeNode<K,V>> Iterator<T> pathFromAncestorEnumeration(T ancestor) {
+		return new PathBetweenNodesEnumeration<>(ancestor, (T)this);
 	}
 
 
@@ -880,6 +885,7 @@ public class MutableTreeNode<K extends Serializable,V> implements TreeNode<K, V>
 	 * @return  true if <code>aNode</code> is a child of this node; false if
 	 *                  <code>aNode</code> is null
 	 */
+	@Override
 	public boolean isNodeChild(TreeNode<K,V> aNode) {
 		boolean retval;
 
@@ -904,7 +910,7 @@ public class MutableTreeNode<K extends Serializable,V> implements TreeNode<K, V>
 	 * @return  the first child of this node
 	 * @exception       NoSuchElementException  if this node has no children
 	 */
-	public MutableTreeNode<K,V> getFirstChild() {
+	public <T extends TreeNode<K,V>> T getFirstChild() {
 		if (childCount() == 0) {
 			throw new NoSuchElementException(NODE_HAS_NO_CHILDREN);
 		}
@@ -919,7 +925,7 @@ public class MutableTreeNode<K extends Serializable,V> implements TreeNode<K, V>
 	 * @return  the last child of this node
 	 * @exception       NoSuchElementException  if this node has no children
 	 */
-	public MutableTreeNode<K,V> getLastChild() {
+	public <T extends TreeNode<K,V>> T getLastChild() {
 		if (childCount() == 0) {
 			throw new NoSuchElementException(NODE_HAS_NO_CHILDREN);
 		}
@@ -941,7 +947,8 @@ public class MutableTreeNode<K extends Serializable,V> implements TreeNode<K, V>
 	 * @return  the child of this node that immediately follows
 	 *          <code>aChild</code>
 	 */
-	public MutableTreeNode<K,V> getChildAfter(TreeNode<K,V> aChild) {
+	@Override
+	public <T extends TreeNode<K,V>> T getChildAfter(TreeNode<K,V> aChild) {
 		if (aChild == null) {
 			throw new IllegalArgumentException(ARGUMENT_IS_NULL);
 		}
@@ -972,7 +979,8 @@ public class MutableTreeNode<K extends Serializable,V> implements TreeNode<K, V>
 	 * @return  the child of this node that immediately precedes
 	 *          <code>aChild</code>
 	 */
-	public MutableTreeNode<K,V> getChildBefore(TreeNode<K,V> aChild) {
+	@Override
+	public <T extends TreeNode<K,V>> T getChildBefore(TreeNode<K,V> aChild) {
 		if (aChild == null) {
 			throw new IllegalArgumentException(ARGUMENT_IS_NULL);
 		}
@@ -1014,7 +1022,6 @@ public class MutableTreeNode<K extends Serializable,V> implements TreeNode<K, V>
 		} else {
 			MutableTreeNode<K,V>  myParent = getParent();
 			retval = (myParent != null && myParent == anotherNode.getParent());
-
 			if (retval && !getParent()
 					.isNodeChild(anotherNode)) {
 				throw new IllegalStateException(SIBLING_HAS_DIFFERENT_PARENT);
@@ -1053,10 +1060,11 @@ public class MutableTreeNode<K extends Serializable,V> implements TreeNode<K, V>
 	 * @see     #children
 	 * @return  the sibling of this node that immediately follows this node
 	 */
-	public MutableTreeNode<K,V> getNextSibling() {
-		MutableTreeNode<K,V> retval;
+	@Override
+	public <T extends TreeNode<K,V>> T getNextSibling() {
+		T retval;
 
-		MutableTreeNode<K,V> myParent = getParent();
+		T myParent = getParent();
 
 		if (myParent == null) {
 			retval = null;
@@ -1080,10 +1088,11 @@ public class MutableTreeNode<K extends Serializable,V> implements TreeNode<K, V>
 	 *
 	 * @return  the sibling of this node that immediately precedes this node
 	 */
-	public MutableTreeNode<K,V> getPreviousSibling() {
-		MutableTreeNode<K,V> retval;
+	@Override
+	public <T extends TreeNode<K,V>> T getPreviousSibling() {
+		T retval;
 
-		MutableTreeNode<K,V> myParent = getParent();
+		T myParent = getParent();
 
 		if (myParent == null) {
 			retval = null;
@@ -1128,14 +1137,15 @@ public class MutableTreeNode<K extends Serializable,V> implements TreeNode<K, V>
 	 * @see     #isNodeDescendant
 	 * @return  the first leaf in the subtree rooted at this node
 	 */
-	public MutableTreeNode<K,V> getFirstLeaf() {
+	@SuppressWarnings("unchecked")
+	public <T extends TreeNode<K,V>> T getFirstLeaf() {
 		MutableTreeNode<K,V> node = this;
 
 		while (!node.isLeaf()) {
 			node = node.getFirstChild();
 		}
 
-		return node;
+		return (T) node;
 	}
 
 
@@ -1148,14 +1158,15 @@ public class MutableTreeNode<K extends Serializable,V> implements TreeNode<K, V>
 	 * @see     #isNodeDescendant
 	 * @return  the last leaf in the subtree rooted at this node
 	 */
-	public MutableTreeNode<K,V> getLastLeaf() {
+	@SuppressWarnings("unchecked")
+	public <T extends TreeNode<K,V>> T getLastLeaf() {
 		MutableTreeNode<K,V> node = this;
 
 		while (!node.isLeaf()) {
 			node = node.getLastChild();
 		}
 
-		return node;
+		return (T) node;
 	}
 
 
@@ -1178,7 +1189,7 @@ public class MutableTreeNode<K extends Serializable,V> implements TreeNode<K, V>
 	 * @see     #isLeaf
 	 * @return  returns the next leaf past this node
 	 */
-	public MutableTreeNode<K,V> getNextLeaf() {
+	public <T extends TreeNode<K,V>> T getNextLeaf() {
 		MutableTreeNode<K,V> nextSibling;
 		MutableTreeNode<K,V> myParent = getParent();
 
@@ -1213,7 +1224,7 @@ public class MutableTreeNode<K extends Serializable,V> implements TreeNode<K, V>
 	 * @see             #isLeaf
 	 * @return  returns the leaf before this node
 	 */
-	public MutableTreeNode<K,V> getPreviousLeaf() {
+	public <T extends TreeNode<K,V>> T getPreviousLeaf() {
 		MutableTreeNode<K,V> previousSibling;
 		MutableTreeNode<K,V> myParent = getParent();
 
@@ -1335,12 +1346,12 @@ public class MutableTreeNode<K extends Serializable,V> implements TreeNode<K, V>
 		}
 	}
 
-	private final class PreorderEnumeration implements Iterator<MutableTreeNode<K,V>> {
-		private final ArrayDeque<Iterator<MutableTreeNode<K,V>>> stack = new ArrayDeque<>();
+	private final class PreorderEnumeration<T extends TreeNode<K,V>> implements Iterator<T> {
+		private final ArrayDeque<Iterator<T>> stack = new ArrayDeque<>();
 
-		public PreorderEnumeration(MutableTreeNode<K,V> rootNode) {
+		public PreorderEnumeration(T rootNode) {
 			super();
-			List<MutableTreeNode<K,V>> v = new ArrayList<>(1);
+			List<T> v = new ArrayList<>(1);
 			v.add(rootNode);     // PENDING: don't really need a vector
 			stack.push(v.iterator());
 		}
@@ -1351,10 +1362,10 @@ public class MutableTreeNode<K extends Serializable,V> implements TreeNode<K, V>
 		}
 
 		@Override
-		public MutableTreeNode<K,V> next() {
-			Iterator<MutableTreeNode<K,V>> enumer = stack.peek();
-			MutableTreeNode<K,V>  node = enumer.next();
-			Iterator<MutableTreeNode<K,V>> iter = node.iterator();
+		public T next() {
+			Iterator<T> enumer = stack.peek();
+			T node = enumer.next();
+			Iterator<T> iter = node.iterator();
 
 			if (!enumer.hasNext()) {
 				stack.pop();
@@ -1369,12 +1380,12 @@ public class MutableTreeNode<K extends Serializable,V> implements TreeNode<K, V>
 
 
 
-	final class PostorderEnumeration implements Iterator<MutableTreeNode<K,V>> {
-		protected MutableTreeNode<K,V> root;
-		protected Iterator<MutableTreeNode<K,V>> children;
-		protected Iterator<MutableTreeNode<K,V>> subtree;
+	final class PostorderEnumeration<T extends TreeNode<K,V>> implements Iterator<T> {
+		protected T root;
+		protected Iterator<T> children;
+		protected Iterator<T> subtree;
 
-		public PostorderEnumeration(MutableTreeNode<K,V> rootNode) {
+		public PostorderEnumeration(T rootNode) {
 			super();
 			root = rootNode;
 			children = root.iterator();
@@ -1387,13 +1398,13 @@ public class MutableTreeNode<K extends Serializable,V> implements TreeNode<K, V>
 		}
 
 		@Override
-		public MutableTreeNode<K,V> next() {
-			MutableTreeNode<K,V> retval;
+		public T next() {
+			T retval;
 
 			if (subtree.hasNext()) {
 				retval = subtree.next();
 			} else if (children.hasNext()) {
-				subtree = new PostorderEnumeration(children.next());
+				subtree = new PostorderEnumeration<>(children.next());
 				retval = subtree.next();
 			} else {
 				retval = root;
@@ -1407,12 +1418,12 @@ public class MutableTreeNode<K extends Serializable,V> implements TreeNode<K, V>
 
 
 
-	final class BreadthFirstEnumeration implements Iterator<MutableTreeNode<K,V>> {
-		protected Queue<Iterator<MutableTreeNode<K,V>>> queue;
+	final class BreadthFirstEnumeration<T extends TreeNode<K,V>> implements Iterator<T> {
+		protected Queue<Iterator<T>> queue;
 
-		public BreadthFirstEnumeration(MutableTreeNode<K,V> rootNode) {
+		public BreadthFirstEnumeration(T rootNode) {
 			super();
-			List<MutableTreeNode<K,V>> v = new ArrayList<>(1);
+			List<T> v = new ArrayList<>(1);
 			v.add(rootNode);     // PENDING: don't really need a vector
 			queue = new Queue<>();
 			queue.enqueue(v.iterator());
@@ -1425,10 +1436,10 @@ public class MutableTreeNode<K extends Serializable,V> implements TreeNode<K, V>
 		}
 
 		@Override
-		public MutableTreeNode<K,V> next() {
-			Iterator<MutableTreeNode<K,V>> iter = queue.firstObject();
-			MutableTreeNode<K,V> node = iter.next();
-			Iterator<MutableTreeNode<K,V>> childrenIter = node.iterator();
+		public T next() {
+			Iterator<T> iter = queue.firstObject();
+			T node = iter.next();
+			Iterator<T> childrenIter = node.iterator();
 
 			if (!iter.hasNext()) {
 				queue.dequeue();
@@ -1497,16 +1508,16 @@ public class MutableTreeNode<K extends Serializable,V> implements TreeNode<K, V>
 
 
 
-	final class PathBetweenNodesEnumeration implements Iterator<MutableTreeNode<K,V>> {
-		protected ArrayDeque<MutableTreeNode<K,V>> stack;
+	final class PathBetweenNodesEnumeration<T extends TreeNode<K,V>> implements Iterator<T> {
+		protected ArrayDeque<T> stack;
 
-		public PathBetweenNodesEnumeration(TreeNode<K,V> ancestor,
-				MutableTreeNode<K,V> descendant) {
+		public PathBetweenNodesEnumeration(T ancestor,
+				T descendant) {
 			super();
 			if (ancestor == null || descendant == null) {
 				throw new IllegalArgumentException(ARGUMENT_IS_NULL);
 			}
-			MutableTreeNode<K,V> current;
+			T current;
 			stack = new ArrayDeque<>();
 			stack.push(descendant);
 			current = descendant;
@@ -1526,7 +1537,7 @@ public class MutableTreeNode<K extends Serializable,V> implements TreeNode<K, V>
 		}
 
 		@Override
-		public MutableTreeNode<K,V> next() {
+		public T next() {
 			try {
 				return stack.pop();
 			} catch (EmptyStackException e) {
@@ -1536,10 +1547,11 @@ public class MutableTreeNode<K extends Serializable,V> implements TreeNode<K, V>
 
 	} // End of class PathBetweenNodesEnumeration
 
+	@SuppressWarnings("unchecked")
 	@Override
-	public MutableTreeNode<K, V> get(TreePath<K> path, SearchStrategy strategy) {
+	public <T extends TreeNode<K, V>> T get(TreePath<K> path, SearchStrategy strategy) {
 		if (strategy == SearchStrategy.PRE_ORDER)
-			return get(path, this.preOrderEnumeration());
+			return (T) get(path, this.preOrderEnumeration());
 		else
 			return get(path);
 	}
@@ -1549,9 +1561,10 @@ public class MutableTreeNode<K extends Serializable,V> implements TreeNode<K, V>
 	 * debug:
 	 * System.out.println( level+":"+checkNode.key + " " + checkNodeLevel );
 	 */
+	@SuppressWarnings("unchecked")
 	@Override
-	public MutableTreeNode<K, V> get(TreePath<K> path) {
-		return get(path, this.breadthFirstEnumeration());
+	public <T extends TreeNode<K, V>> T get(TreePath<K> path) {
+		return  (T) get(path, this.breadthFirstEnumeration());
 	}
 
 	/**
@@ -1559,15 +1572,15 @@ public class MutableTreeNode<K extends Serializable,V> implements TreeNode<K, V>
 	 * debug:
 	 * System.out.println( level+":"+checkNode.key + " " + checkNodeLevel );
 	 */
-	private MutableTreeNode<K, V> get(TreePath<K> path, Iterator<MutableTreeNode<K, V>> enumeration) {
-		MutableTreeNode<K,V> ret = null;
+	private <T extends TreeNode<K, V>> T get(TreePath<K> path, Iterator<T> enumeration) {
+		T ret = null;
 		K[] keyArr = path.getPath();
-		Iterator<MutableTreeNode<K,V>>  iter = enumeration;
+		Iterator<T>  iter = enumeration;
 		for(int level = 0, len = keyArr.length; level < len;) {
 			if (iter.hasNext()) {
-				MutableTreeNode<K, V> checkNode = iter.next();
+				T checkNode = iter.next();
 				K k = keyArr[level];
-				boolean keyMatch = k.equals(checkNode.key);
+				boolean keyMatch = k.equals(checkNode.getKey());
 				int checkNodeLevel = checkNode.getLevel();
 				/* key and level matches */
 				if (checkNodeLevel == level && keyMatch) {
@@ -1586,17 +1599,17 @@ public class MutableTreeNode<K extends Serializable,V> implements TreeNode<K, V>
 		return ret;
 	}
 
-
-
+	@SuppressWarnings("unchecked")
 	@Override
-	public MutableTreeNode<K, V> find(K uniqueKey) {
-		return find( uniqueKey, this.breadthFirstEnumeration());
+	public <T extends TreeNode<K, V>> T find(K uniqueKey) {
+		return (T) find( uniqueKey, this.breadthFirstEnumeration());
 	}
 
+	@SuppressWarnings("unchecked")
 	@Override
-	public MutableTreeNode<K, V> find(K uniqueKey, SearchStrategy strategy) {
+	public <T extends TreeNode<K, V>> T find(K uniqueKey, SearchStrategy strategy) {
 		if (strategy == SearchStrategy.PRE_ORDER)
-			return find(uniqueKey, this.preOrderEnumeration());
+			return (T) find(uniqueKey, this.preOrderEnumeration());
 		else
 			return find(uniqueKey);
 	}
@@ -1606,12 +1619,12 @@ public class MutableTreeNode<K extends Serializable,V> implements TreeNode<K, V>
 	 * debug:
 	 * System.out.println( level+":"+checkNode.key + " " + checkNodeLevel );
 	 */
-	public MutableTreeNode<K, V> find(K uniqueKey, Iterator<MutableTreeNode<K, V>> enumeration) {
-		MutableTreeNode<K,V> ret = null;
-		Iterator<MutableTreeNode<K,V>>  iter = enumeration;
+	public <T extends TreeNode<K, V>> T find(K uniqueKey, Iterator<T> enumeration) {
+		T ret = null;
+		Iterator<T>  iter = enumeration;
 		while (uniqueKey != null && iter.hasNext()) {
-			MutableTreeNode<K, V> checkNode = iter.next();
-			boolean keyMatch = uniqueKey.equals(checkNode.key);
+			T checkNode = iter.next();
+			boolean keyMatch = uniqueKey.equals(checkNode.getKey());
 			/* key matches */
 			if (keyMatch) {
 				ret = checkNode;
@@ -1697,7 +1710,7 @@ public class MutableTreeNode<K extends Serializable,V> implements TreeNode<K, V>
 	 * @throws IllegalArgumentException if TreePaths do not have a single root
 	 * @return
 	 */
-	public static <K extends Serializable,V> MutableTreeNode<K, V> valueOf(TreePath<K>[] treePaths) {
+	public static <K extends Serializable, V> MutableTreeNode<K, V> valueOf(TreePath<K>[] treePaths) {
 		if (treePaths == null )
 			throw new IllegalArgumentException( "input treePaths is null" );
 		MutableTreeNode<K, V> root = new MutableTreeNode<>();

@@ -26,7 +26,14 @@ public interface TreeNode<K extends Serializable,V> {
 	 * Returns the child <code>TreeNode</code> at index
 	 * <code>childIndex</code>.
 	 */
-	TreeNode<K,V> getChildAt(int childIndex);
+	<T extends TreeNode<K,V>> T getChildAt(int childIndex);
+
+	<T extends TreeNode<K,V>> T getNextSibling();
+	<T extends TreeNode<K,V>> T getPreviousSibling();
+
+	<T extends TreeNode<K,V>> T getChildAfter(TreeNode<K,V> node);
+	<T extends TreeNode<K,V>> T getChildBefore(TreeNode<K,V> node);
+
 
 	/**
 	 * Returns the number of children <code>TreeNode</code>s the receiver
@@ -43,7 +50,7 @@ public interface TreeNode<K extends Serializable,V> {
 	/**
 	 * Returns the parent <code>TreeNode</code> of the receiver.
 	 */
-	TreeNode<K,V> getParent();
+	<T extends TreeNode<K,V>> T getParent();
 
 	/**
 	 * Returns the index of <code>node</code> in the receivers children.
@@ -71,6 +78,11 @@ public interface TreeNode<K extends Serializable,V> {
 	 * Returns the level of this node
 	 */
 	int getLevel();
+
+	/**
+	 * Is {@code aNode} a child
+	 */
+	boolean isNodeChild(TreeNode<K,V> aNode);
 
 	/*
 	 * Returns children of this tree node only
@@ -113,7 +125,7 @@ public interface TreeNode<K extends Serializable,V> {
 	 * @param path
 	 * @return
 	 */
-	TreeNode<K,V> get(TreePath<K> path);
+	<T extends TreeNode<K,V>> T get(TreePath<K> path);
 
 	/**
 	 * Returns the tree-node based on the tree-path
@@ -125,7 +137,7 @@ public interface TreeNode<K extends Serializable,V> {
 	 * @param strategy
 	 * @return
 	 */
-	TreeNode<K, V> get(TreePath<K> path, SearchStrategy strategy);
+	<T extends TreeNode<K,V>> T get(TreePath<K> path, SearchStrategy strategy);
 
 	/**
 	 * Returns the tree-node based on an unique key
@@ -135,7 +147,7 @@ public interface TreeNode<K extends Serializable,V> {
 	 * @param uniqueKey
 	 * @return
 	 */
-	TreeNode<K,V> find( K uniqueKey );
+	<T extends TreeNode<K,V>> T find( K uniqueKey );
 
 	/**
 	 * Returns the tree-node based on an unique key
@@ -148,7 +160,7 @@ public interface TreeNode<K extends Serializable,V> {
 	 * @param strategy allows pre-order or breadth-first enumeration
 	 * @return null if node not found
 	 */
-	TreeNode<K,V> find( K uniqueKey, SearchStrategy strategy);
+	<T extends TreeNode<K,V>> T find( K uniqueKey, SearchStrategy strategy);
 
 	/**
 	 * Return the key
