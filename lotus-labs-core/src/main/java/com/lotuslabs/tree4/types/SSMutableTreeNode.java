@@ -36,28 +36,47 @@ public class SSMutableTreeNode extends MutableTreeNode<String, String> {
 	 */
 	private static final long serialVersionUID = -101304720231586990L;
 
+	/**
+	 * Constructor with no parametres
+	 */
+	public SSMutableTreeNode() {
+		super();
+	}
+
+	/**
+	 * Constructor with key,value
+	 *
+	 * @param key
+	 * @param userObject
+	 * @param allowsChildren
+	 */
+	public SSMutableTreeNode(String key, String userObject, boolean allowsChildren) {
+		super(key, userObject, allowsChildren);
+	}
+
+	/**
+	 * Constructor with key,value
+	 *
+	 * @param key
+	 * @param userObject
+	 */
+	public SSMutableTreeNode(String key, String userObject) {
+		super(key, userObject);
+	}
+
+	/**
+	 * Constructor with value object
+	 *
+	 * @param userObject
+	 */
+	public SSMutableTreeNode(String userObject) {
+		super(userObject);
+	}
 
 	@FunctionalInterface
 	interface KeyGenerator<K, V, I> {
 		K generate(V value, I seq);
 	}
-
-	public SSMutableTreeNode() {
-		super();
-	}
-
-	public SSMutableTreeNode(String key, String userObject, boolean allowsChildren) {
-		super(key, userObject, allowsChildren);
-	}
-
-	public SSMutableTreeNode(String key, String userObject) {
-		super(key, userObject);
-	}
-
-	public SSMutableTreeNode(String userObject) {
-		super(userObject);
-	}
-
 
 	/**
 	 * Construct treenode based on key pairs
