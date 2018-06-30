@@ -1237,6 +1237,7 @@ public class MutableTreeNode<K extends Serializable,V> implements TreeNode<K, V>
 	 * @see     #isNodeAncestor
 	 * @return  the number of leaves beneath this node
 	 */
+	@Override
 	public int leafCount() {
 		int count = 0;
 		MutableTreeNode<K,V> node;
@@ -1497,19 +1498,14 @@ public class MutableTreeNode<K extends Serializable,V> implements TreeNode<K, V>
 		protected ArrayDeque<MutableTreeNode<K,V>> stack;
 
 		public PathBetweenNodesEnumeration(TreeNode<K,V> ancestor,
-				MutableTreeNode<K,V> descendant)
-		{
+				MutableTreeNode<K,V> descendant) {
 			super();
-
 			if (ancestor == null || descendant == null) {
 				throw new IllegalArgumentException(ARGUMENT_IS_NULL);
 			}
-
 			MutableTreeNode<K,V> current;
-
 			stack = new ArrayDeque<>();
 			stack.push(descendant);
-
 			current = descendant;
 			while (current != ancestor) {
 				current = current.getParent();
