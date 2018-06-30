@@ -1032,7 +1032,7 @@ public class MutableTreeNode<K extends Serializable,V> implements TreeNode<K, V>
 	 *
 	 * @return  the number of siblings of this node
 	 */
-	public int getSiblingCount() {
+	public int siblingCount() {
 		MutableTreeNode<K,V> myParent = getParent();
 
 		if (myParent == null) {
