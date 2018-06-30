@@ -1,5 +1,11 @@
 package com.lotuslabs.tree4;
 
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -204,6 +210,24 @@ public class MutableTreeNodeTest {
 		return px;
 	}
 
+	@Test
+	public void testWriteObject() throws FileNotFoundException, IOException, ClassNotFoundException {
+		System.out.println( this.mutableTreeNode.generateTreeOutput());
+
+		ObjectOutputStream output =
+				new ObjectOutputStream(new FileOutputStream("object.data"));
+		output.writeObject(this.mutableTreeNode);
+		output.close();
+
+		ObjectInputStream input =
+				new ObjectInputStream(new FileInputStream("object.data"));
+
+		@SuppressWarnings("unchecked")
+		MutableTreeNode<String,String> clonedTreeNode = (MutableTreeNode<String, String>) input.readObject();
+		input.close();
+		System.out.println( clonedTreeNode.generateTreeOutput());
+		Assert.assertEquals(this.mutableTreeNode.generateTreeOutput(), clonedTreeNode.generateTreeOutput());
+	}
 
 	public static void main(String[] args) {
 		new MutableTreeNodeTest().setUp();

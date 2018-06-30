@@ -1305,14 +1305,15 @@ public class MutableTreeNode<K extends Serializable,V> implements TreeNode<K, V>
 
 	// Serialization support.
 	private void writeObject(ObjectOutputStream s) throws IOException {
-		Object[]             tValues;
+		Object[] tValues;
 
 		s.defaultWriteObject();
 		// Save the userObject, if its Serializable.
 		if(userObject != null && userObject instanceof Serializable) {
-			tValues = new Object[2];
+			tValues = new Object[3];
 			tValues[0] = USER_OBJECT;
 			tValues[1] = userObject;
+			tValues[2] = key;
 		}
 		else
 			tValues = new Object[0];
@@ -1322,14 +1323,16 @@ public class MutableTreeNode<K extends Serializable,V> implements TreeNode<K, V>
 	@SuppressWarnings("unchecked")
 	private void readObject(ObjectInputStream s)
 			throws IOException, ClassNotFoundException {
-		V[]      tValues;
+		Object[] tValues;
 
 		s.defaultReadObject();
 
-		tValues = (V[])s.readObject();
+		tValues = (Object[])s.readObject();
 
-		if(tValues.length > 0 && tValues[0].equals(USER_OBJECT))
-			userObject = tValues[1];
+		if(tValues.length > 0 && tValues[0].equals(USER_OBJECT)) {
+			userObject = (V)tValues[1];
+			key = (K)tValues[2];
+		}
 	}
 
 	private final class PreorderEnumeration implements Iterator<MutableTreeNode<K,V>> {
