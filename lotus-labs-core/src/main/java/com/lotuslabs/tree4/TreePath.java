@@ -2,6 +2,7 @@ package com.lotuslabs.tree4;
 
 import java.beans.ConstructorProperties;
 import java.io.Serializable;
+import java.lang.reflect.Array;
 
 /**
  * TreePath
@@ -120,12 +121,11 @@ public class TreePath<K extends Serializable> implements Serializable {
 	@SuppressWarnings("unchecked")
 	public K[] getPath() {
 		int i = getPathCount();
-		Serializable[] result = new Serializable[i--];
-
+		final K[] result = (K[]) Array.newInstance( lastPathComponent.getClass(), i--);
 		for(TreePath<K> path = this; path != null; path = path.getParentPath()) {
 			result[i--] = path.getLastPathComponent();
 		}
-		return (K[]) result;
+		return result;
 	}
 
 	/**

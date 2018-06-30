@@ -188,6 +188,13 @@ public class MutableTreeNodeTest {
 		Assert.assertNull("Invalid path beyond depth of tree", node);
 	}
 
+	@Test
+	public void testValueOf() {
+		TreePath<String>[] treePaths = treePathParameters();
+		MutableTreeNode<String, Object> root = MutableTreeNode.valueOf(treePaths);
+		Assert.assertEquals(2, root.childCount());
+	}
+
 	public static TreePath<String>[] treePathParameters() {
 		@SuppressWarnings("unchecked")
 		TreePath<String>[] px = (TreePath<String>[]) Array.newInstance(TreePath.class,3);

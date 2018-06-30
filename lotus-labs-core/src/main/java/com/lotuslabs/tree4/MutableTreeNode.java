@@ -227,12 +227,23 @@ public class MutableTreeNode<K extends Serializable,V> implements TreeNode<K, V>
 	 * @return  an int giving the number of children of this node
 	 */
 	@Override
-	public int getChildCount() {
+	public int childCount() {
 		if (children == null) {
 			return 0;
 		} else {
 			return children.size();
 		}
+	}
+
+	@Override
+	public int totalCount() {
+		int count = 0;
+		Iterator<MutableTreeNode<K,V>> iter = breadthFirstEnumeration(); // order matters not
+		while (iter.hasNext()) {
+			if (iter.next() != null)
+				count++;
+		}
+		return count;
 	}
 
 	/**
@@ -329,7 +340,10 @@ public class MutableTreeNode<K extends Serializable,V> implements TreeNode<K, V>
 		return userObject;
 	}
 
-
+	@Override
+	public K getKey() {
+		return this.key;
+	}
 	//
 	//  Derived methods
 	//
@@ -370,7 +384,7 @@ public class MutableTreeNode<K extends Serializable,V> implements TreeNode<K, V>
 	 * If this node has no children, this method does nothing.
 	 */
 	public void removeAllChildren() {
-		for (int i = getChildCount()-1; i >= 0; i--) {
+		for (int i = childCount()-1; i >= 0; i--) {
 			remove(i);
 		}
 	}
@@ -388,9 +402,9 @@ public class MutableTreeNode<K extends Serializable,V> implements TreeNode<K, V>
 	 */
 	public void add(MutableTreeNode<K,V> newChild) {
 		if(newChild != null && newChild.getParent() == this)
-			insert(newChild, getChildCount() - 1);
+			insert(newChild, childCount() - 1);
 		else
-			insert(newChild, getChildCount());
+			insert(newChild, childCount());
 	}
 
 
@@ -699,7 +713,7 @@ public class MutableTreeNode<K extends Serializable,V> implements TreeNode<K, V>
 	 *          null if this node is last
 	 */
 	public MutableTreeNode<K,V> getNextNode() {
-		if (getChildCount() == 0) {
+		if (childCount() == 0) {
 			// No children, so look for nextSibling
 			MutableTreeNode<K,V> nextSibling = getNextSibling();
 
@@ -749,7 +763,7 @@ public class MutableTreeNode<K extends Serializable,V> implements TreeNode<K, V>
 		previousSibling = getPreviousSibling();
 
 		if (previousSibling != null) {
-			if (previousSibling.getChildCount() == 0)
+			if (previousSibling.childCount() == 0)
 				return previousSibling;
 			else
 				return previousSibling.getLastLeaf();
@@ -872,7 +886,7 @@ public class MutableTreeNode<K extends Serializable,V> implements TreeNode<K, V>
 		if (aNode == null) {
 			retval = false;
 		} else {
-			if (getChildCount() == 0) {
+			if (childCount() == 0) {
 				retval = false;
 			} else {
 				retval = (aNode.getParent() == this);
@@ -891,7 +905,7 @@ public class MutableTreeNode<K extends Serializable,V> implements TreeNode<K, V>
 	 * @exception       NoSuchElementException  if this node has no children
 	 */
 	public MutableTreeNode<K,V> getFirstChild() {
-		if (getChildCount() == 0) {
+		if (childCount() == 0) {
 			throw new NoSuchElementException(NODE_HAS_NO_CHILDREN);
 		}
 		return getChildAt(0);
@@ -906,10 +920,10 @@ public class MutableTreeNode<K extends Serializable,V> implements TreeNode<K, V>
 	 * @exception       NoSuchElementException  if this node has no children
 	 */
 	public MutableTreeNode<K,V> getLastChild() {
-		if (getChildCount() == 0) {
+		if (childCount() == 0) {
 			throw new NoSuchElementException(NODE_HAS_NO_CHILDREN);
 		}
-		return getChildAt(getChildCount()-1);
+		return getChildAt(childCount()-1);
 	}
 
 
@@ -938,7 +952,7 @@ public class MutableTreeNode<K extends Serializable,V> implements TreeNode<K, V>
 			throw new IllegalArgumentException(NODE_IS_NOT_A_CHILD);
 		}
 
-		if (index < getChildCount() - 1) {
+		if (index < childCount() - 1) {
 			return getChildAt(index + 1);
 		} else {
 			return null;
@@ -1024,7 +1038,7 @@ public class MutableTreeNode<K extends Serializable,V> implements TreeNode<K, V>
 		if (myParent == null) {
 			return 1;
 		} else {
-			return myParent.getChildCount();
+			return myParent.childCount();
 		}
 	}
 
@@ -1101,7 +1115,7 @@ public class MutableTreeNode<K extends Serializable,V> implements TreeNode<K, V>
 	 */
 	@Override
 	public boolean isLeaf() {
-		return (getChildCount() == 0);
+		return (childCount() == 0);
 	}
 
 
@@ -1223,23 +1237,19 @@ public class MutableTreeNode<K extends Serializable,V> implements TreeNode<K, V>
 	 * @see     #isNodeAncestor
 	 * @return  the number of leaves beneath this node
 	 */
-	public int getLeafCount() {
+	public int leafCount() {
 		int count = 0;
-
 		MutableTreeNode<K,V> node;
 		Iterator<MutableTreeNode<K,V>> iter = breadthFirstEnumeration(); // order matters not
-
 		while (iter.hasNext()) {
 			node = iter.next();
 			if (node.isLeaf()) {
 				count++;
 			}
 		}
-
 		if (count < 1) {
 			throw new IllegalArgumentException(TREE_HAS_ZERO_LEAVES);
 		}
-
 		return count;
 	}
 
@@ -1597,7 +1607,7 @@ public class MutableTreeNode<K extends Serializable,V> implements TreeNode<K, V>
 	 * debug:
 	 * System.out.println( level+":"+checkNode.key + " " + checkNodeLevel );
 	 */
-	private MutableTreeNode<K, V> find(K uniqueKey, Iterator<MutableTreeNode<K, V>> enumeration) {
+	public MutableTreeNode<K, V> find(K uniqueKey, Iterator<MutableTreeNode<K, V>> enumeration) {
 		MutableTreeNode<K,V> ret = null;
 		Iterator<MutableTreeNode<K,V>>  iter = enumeration;
 		while (uniqueKey != null && iter.hasNext()) {
@@ -1681,4 +1691,38 @@ public class MutableTreeNode<K extends Serializable,V> implements TreeNode<K, V>
 		}
 		return ret.toString();
 	}
+
+	/**
+	 * Construct a tree of nodes with their keys from the treepath
+	 * @param treePaths is not null
+	 * @throws IllegalArgumentException if TreePaths do not have a single root
+	 * @return
+	 */
+	public static <K extends Serializable,V> MutableTreeNode<K, V> valueOf(TreePath<K>[] treePaths) {
+		if (treePaths == null )
+			throw new IllegalArgumentException( "input treePaths is null" );
+		MutableTreeNode<K, V> root = new MutableTreeNode<>();
+
+		for (int i = 0; i < treePaths.length; i++) {
+			MutableTreeNode<K, V> matchNode = root;
+			TreePath<K> tp = treePaths[i];
+			K[] path = tp.getPath();
+			for (int j = 0; j < path.length; j++) {
+				MutableTreeNode<K, V> foundNode = null;
+				foundNode = matchNode.find(path[j], matchNode.iterator());
+				if (foundNode == null) {
+					foundNode = new MutableTreeNode<>(path[j], null);
+					matchNode.add(foundNode);
+				}
+				matchNode = foundNode;
+			}
+		}
+		if (root.childCount() > 1 )
+			throw new IllegalArgumentException( "no single root" );
+
+		MutableTreeNode<K, V> newRoot = root.getFirstChild();
+		if (newRoot != null ) newRoot.removeFromParent();
+		return newRoot;
+	}
+
 } // End of class MutableTreeNode

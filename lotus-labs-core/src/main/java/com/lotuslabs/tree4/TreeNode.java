@@ -32,7 +32,13 @@ public interface TreeNode<K extends Serializable,V> {
 	 * Returns the number of children <code>TreeNode</code>s the receiver
 	 * contains.
 	 */
-	int getChildCount();
+	int childCount();
+
+	/**
+	 * Returns the number of leaves in the entire tree
+	 * @return
+	 */
+	int leafCount();
 
 	/**
 	 * Returns the parent <code>TreeNode</code> of the receiver.
@@ -143,5 +149,17 @@ public interface TreeNode<K extends Serializable,V> {
 	 * @return null if node not found
 	 */
 	TreeNode<K,V> find( K uniqueKey, SearchStrategy strategy);
+
+	/**
+	 * Return the key
+	 * @return
+	 */
+	K getKey();
+
+	/**
+	 * Return count all the nodes
+	 * @return
+	 */
+	int totalCount();
 
 }
