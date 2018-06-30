@@ -28,12 +28,31 @@ public interface TreeNode<K extends Serializable,V> {
 	 */
 	<T extends TreeNode<K,V>> T getChildAt(int childIndex);
 
+	/**
+	 * Return the next sibling for this node
+	 * @return null if does not exist
+	 */
 	<T extends TreeNode<K,V>> T getNextSibling();
+
+	/**
+	 * Return the previous siblint for this node
+	 * @return null if does not exist
+	 */
 	<T extends TreeNode<K,V>> T getPreviousSibling();
 
+	/**
+	 * Return the child after supplied one for this parent
+	 * @param node one of the child node
+	 * @return null if does not exist
+	 */
 	<T extends TreeNode<K,V>> T getChildAfter(TreeNode<K,V> node);
-	<T extends TreeNode<K,V>> T getChildBefore(TreeNode<K,V> node);
 
+	/**
+	 * Return the child before supplied one for this parent
+	 * @param node one of the child node
+	 * @return null if does not exist
+	 */
+	<T extends TreeNode<K,V>> T getChildBefore(TreeNode<K,V> node);
 
 	/**
 	 * Returns the number of children <code>TreeNode</code>s the receiver
