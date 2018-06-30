@@ -25,7 +25,7 @@ public class MutableTreeNodePerfTest {
 		String loop1 = "0ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 		createLevel(mappings, loop1, loop0, 3);
 		long start = System.currentTimeMillis();
-		mutableTreeNode = SSMutableTreeNode.withValues(mappings.toArray(new String[0]));
+		mutableTreeNode = SSMutableTreeNode.valueOf(mappings.toArray(new String[0]), null, ':');
 		long stop = System.currentTimeMillis();
 		System.out.println( "createTree time:" + (stop-start));
 		treeNode = mutableTreeNode;
@@ -70,7 +70,8 @@ public class MutableTreeNodePerfTest {
 				"KCBA0CBA00",
 				"K0CBA0CBA00"
 		};
-		System.out.println( treeNode.get(new TreePath<>(query)));
+
+		System.out.println( treeNode.get(new TreePath<>(query)).toString() );
 		long stop = System.currentTimeMillis();
 		System.out.println( "get time(ms): " + (stop-start));
 	}
@@ -80,7 +81,7 @@ public class MutableTreeNodePerfTest {
 		long start = System.currentTimeMillis();
 		//String q="K0CBA0CBA00";
 		String q="KQPONMLKJIHGFEDCBA0ZYXWVUTSRQPONMLKJIHGFEDCBA0ZYXWVUTSRQPONMLKJIHGFEDCBA00";
-		System.out.println( treeNode.find(q, SearchStrategy.BREADTH_FIRST) );
+		System.out.println( treeNode.find(q, SearchStrategy.BREADTH_FIRST).toString() );
 		long stop = System.currentTimeMillis();
 		System.out.println( "BF find time(ms): " + (stop-start));
 	}
@@ -90,13 +91,15 @@ public class MutableTreeNodePerfTest {
 		long start = System.currentTimeMillis();
 		//String q="K0CBA0CBA00";
 		String q="KQPONMLKJIHGFEDCBA0ZYXWVUTSRQPONMLKJIHGFEDCBA0ZYXWVUTSRQPONMLKJIHGFEDCBA00";
-		System.out.println( treeNode.find(q, SearchStrategy.PRE_ORDER) );
+		System.out.println( treeNode.find(q, SearchStrategy.PRE_ORDER).toString() );
 		long stop = System.currentTimeMillis();
 		System.out.println( "PO find time(ms): " + (stop-start));
 	}
 
 	public static void main(String[] args) {
-		new MutableTreeNodePerfTest().setUp();
+		MutableTreeNodePerfTest perfTest = new MutableTreeNodePerfTest();
+		perfTest.setUp();
+		perfTest.testGet();
 	}
 
 }
