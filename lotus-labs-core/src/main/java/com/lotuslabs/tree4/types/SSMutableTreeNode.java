@@ -140,27 +140,10 @@ public class SSMutableTreeNode extends SVMutableTreeNode<String> {
 	}
 
 	public static SSMutableTreeNode withPaths(String[] paths, char delimiter) {
-		SSMutableTreeNode root = new SSMutableTreeNode();
-		SSMutableTreeNode matchNode = root;
+		Map<String,String> propertyMap = new HashMap<>();
 		for (int i = 0; i < paths.length; i++) {
-			String singlePath = paths[i];
-			String[] strTreePaths = singlePath.split("\\"+delimiter);
-			for (int j = 0; j < paths.length; j++) {
-				SSMutableTreeNode foundNode = matchNode.find(paths[j], matchNode.iterator());
-				if (foundNode == null) {
-					foundNode = new SSMutableTreeNode(strTreePaths[j], null);
-					matchNode.add(foundNode);
-				}
-				matchNode = foundNode;
-			}
-
+			propertyMap.put(paths[i], null);
 		}
-		if (root.childCount() > 1 )
-			throw new IllegalArgumentException( "no single root" );
-
-		SSMutableTreeNode newRoot = root.getFirstChild();
-		if (newRoot != null ) newRoot.removeFromParent();
-		return newRoot;
-
+		return (SSMutableTreeNode) SVMutableTreeNode.<String>withPaths(propertyMap, delimiter);
 	}
 }

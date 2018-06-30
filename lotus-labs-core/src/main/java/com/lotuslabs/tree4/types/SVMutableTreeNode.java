@@ -21,6 +21,7 @@ package com.lotuslabs.tree4.types;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 import com.lotuslabs.tree4.MutableTreeNode;
 
@@ -123,5 +124,30 @@ public class SVMutableTreeNode<V> extends MutableTreeNode<String, V> {
 			}
 		}
 		return root;
+	}
+
+	public static <V> SVMutableTreeNode<V> withPaths(Map<String,V> propertyMap, char delimiter) {
+		SVMutableTreeNode<V> root = new SVMutableTreeNode<>();
+		Set<String> keySet = propertyMap.keySet();
+		for (String singlePath : keySet) {
+			SVMutableTreeNode<V> matchNode = root;
+			String[] strTreePaths = singlePath.split("\\"+delimiter);
+			for (int j = 0; j < strTreePaths.length; j++) {
+				SVMutableTreeNode<V> foundNode = matchNode.find(strTreePaths[j], matchNode.iterator());
+				if (foundNode == null) {
+					foundNode = new SVMutableTreeNode<>(strTreePaths[j], null);
+					matchNode.add(foundNode);
+				}
+				matchNode = foundNode;
+			}
+			matchNode.setUserObject(propertyMap.get(singlePath));
+		}
+		if (root.childCount() > 1 )
+			throw new IllegalArgumentException( "no single root" );
+
+		SVMutableTreeNode<V> newRoot = root.getFirstChild();
+		if (newRoot != null ) newRoot.removeFromParent();
+		return newRoot;
+
 	}
 }
