@@ -22,14 +22,12 @@ package com.lotuslabs.tree4.types;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.lotuslabs.tree4.MutableTreeNode;
-
 /**
  * TreeNode with K as String and V as String
  * @author psurti
  *
  */
-public class SSMutableTreeNode extends MutableTreeNode<String, String> {
+public class SSMutableTreeNode extends SVMutableTreeNode<String> {
 
 	/**
 	 * Serial
@@ -76,43 +74,6 @@ public class SSMutableTreeNode extends MutableTreeNode<String, String> {
 	@FunctionalInterface
 	interface KeyGenerator<K, V, I> {
 		K generate(V value, I seq);
-	}
-
-	/**
-	 * Construct treenode based on key pairs
-	 *
-	 * @param keyPairs
-	 * @param delimiter
-	 * @return mutable tree node based tuples of key pairs
-	 */
-	public static SSMutableTreeNode valueOf(String[] keyPairs, char delimiter) {
-		SSMutableTreeNode root = null;
-
-		Map<String,SSMutableTreeNode> ledger = new HashMap<>();
-		for (int i = 0; i < keyPairs.length; i++ ) {
-			String[] parts = keyPairs[i].split("\\" + delimiter);
-
-			if (! ledger.containsKey(parts[0]) ) {
-				ledger.put(parts[0], new SSMutableTreeNode(parts[0], null));
-			}
-
-			// find if child exists
-			// find if parent exists
-			SSMutableTreeNode childNode = ledger.get(parts[0]);
-
-			if (! ledger.containsKey(parts[1])) {
-				ledger.put(parts[1], new SSMutableTreeNode(parts[1],null));
-			}
-
-			SSMutableTreeNode parentNode = ledger.get(parts[1]);
-
-			parentNode.add(childNode);
-
-			if (parentNode.getParent() == null && parentNode != root) {
-				root = parentNode;
-			}
-		}
-		return root;
 	}
 
 	/**
