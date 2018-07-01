@@ -150,4 +150,12 @@ public class SVMutableTreeNode<V> extends MutableTreeNode<String, V> {
 		return newRoot;
 
 	}
+
+	public static <V> SVMutableTreeNode<V> withPaths(String[] paths, char delimiter) {
+		Map<String,V> propertyMap = new HashMap<>();
+		for (int i = 0; i < paths.length; i++) {
+			propertyMap.put(paths[i], null);
+		}
+		return SVMutableTreeNode.<V>withPaths(propertyMap, delimiter);
+	}
 }

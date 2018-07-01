@@ -73,7 +73,7 @@ public class SSMutableTreeNodeTest {
 				"spring.jpa.hibernate.naming-strategy",
 				"spring.jpa.properties.hibernate.dialect"
 		};
-		SSMutableTreeNode tree = SSMutableTreeNode.withPaths(flatProperties,'.');
+		SVMutableTreeNode<String> tree = SSMutableTreeNode.withPaths(flatProperties,'.');
 		System.out.println( tree.generateTreeOutput() );
 	}
 

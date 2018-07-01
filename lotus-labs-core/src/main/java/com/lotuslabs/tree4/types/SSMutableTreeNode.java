@@ -139,11 +139,4 @@ public class SSMutableTreeNode extends SVMutableTreeNode<String> {
 			return root;
 	}
 
-	public static SSMutableTreeNode withPaths(String[] paths, char delimiter) {
-		Map<String,String> propertyMap = new HashMap<>();
-		for (int i = 0; i < paths.length; i++) {
-			propertyMap.put(paths[i], null);
-		}
-		return (SSMutableTreeNode) SVMutableTreeNode.<String>withPaths(propertyMap, delimiter);
-	}
 }
