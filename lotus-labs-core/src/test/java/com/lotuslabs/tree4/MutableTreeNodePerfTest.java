@@ -3,17 +3,24 @@ package com.lotuslabs.tree4;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
 import com.lotuslabs.tree4.TreeNode.SearchStrategy;
 import com.lotuslabs.tree4.types.SSMutableTreeNode;
+import com.lotuslabs.utils.Repeat;
+import com.lotuslabs.utils.RepeatRule;
 
 @RunWith(JUnit4.class)
 public class MutableTreeNodePerfTest {
+
+	@Rule
+	public RepeatRule repeatRule = new RepeatRule();
 
 	MutableTreeNode<String,String> mutableTreeNode;
 	TreeNode<String,String> treeNode;
@@ -27,13 +34,14 @@ public class MutableTreeNodePerfTest {
 		long start = System.currentTimeMillis();
 		mutableTreeNode = SSMutableTreeNode.valueOf(mappings.toArray(new String[0]), null, ':');
 		long stop = System.currentTimeMillis();
-		System.out.println( "createTree time:" + (stop-start));
+		System.out.println( "createTree time:" + (stop-start) + " totalNodes:" + mutableTreeNode.totalCount());
 		treeNode = mutableTreeNode;
-
-		System.out.println( "######################");
-
 	}
 
+	@After
+	public void tearDown() {
+		System.out.println("---");
+	}
 
 	private void createLevel(List<String> mappings, String loop, String parent, int level) {
 		if (level == 0)
@@ -55,7 +63,8 @@ public class MutableTreeNodePerfTest {
 		Assert.assertTrue(actual, true);
 	}
 
-	@Test(timeout=50)
+	@Test(timeout=150)
+	@Repeat(10)
 	public void testGet() {
 		long start = System.currentTimeMillis();
 		String[] query = {
@@ -76,7 +85,8 @@ public class MutableTreeNodePerfTest {
 		System.out.println( "get time(ms): " + (stop-start));
 	}
 
-	@Test(timeout=50)
+	@Test(timeout=150)
+	@Repeat(10)
 	public void testFind_BreadthFirst() {
 		long start = System.currentTimeMillis();
 		//String q="K0CBA0CBA00";
@@ -86,14 +96,15 @@ public class MutableTreeNodePerfTest {
 		System.out.println( "BF find time(ms): " + (stop-start));
 	}
 
-	@Test(timeout=50)
+	@Test(timeout=150)
+	@Repeat(10)
 	public void testFind_PreOrder() {
 		long start = System.currentTimeMillis();
 		//String q="K0CBA0CBA00";
 		String q="KQPONMLKJIHGFEDCBA0ZYXWVUTSRQPONMLKJIHGFEDCBA0ZYXWVUTSRQPONMLKJIHGFEDCBA00";
 		System.out.println( treeNode.find(q, SearchStrategy.PRE_ORDER).toString() );
 		long stop = System.currentTimeMillis();
-		System.out.println( "PO find time(ms): " + (stop-start));
+		System.out.println( "PreO find time(ms): " + (stop-start));
 	}
 
 	public static void main(String[] args) {
