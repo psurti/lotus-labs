@@ -12,7 +12,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
 import com.lotuslabs.tree4.TreeNode.SearchStrategy;
-import com.lotuslabs.tree4.types.SSMutableTreeNode;
+import com.lotuslabs.tree4.types.SVMutableTreeNode;
 import com.lotuslabs.utils.Repeat;
 import com.lotuslabs.utils.RepeatRule;
 
@@ -32,7 +32,7 @@ public class MutableTreeNodePerfTest {
 		String loop1 = "0ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 		createLevel(mappings, loop1, loop0, 3);
 		long start = System.currentTimeMillis();
-		mutableTreeNode = SSMutableTreeNode.valueOf(mappings.toArray(new String[0]), null, ':');
+		mutableTreeNode = SVMutableTreeNode.withStringValues(mappings.toArray(new String[0]), null, ':');
 		long stop = System.currentTimeMillis();
 		System.out.println( "createTree time:" + (stop-start) + " totalNodes:" + mutableTreeNode.totalCount());
 		treeNode = mutableTreeNode;

@@ -17,12 +17,12 @@ import com.lotuslabs.tree4.TreePath;
 @RunWith(JUnit4.class)
 public class SSMutableTreeNodeTest {
 
-	SSMutableTreeNode mutableTreeNode;
+	SVMutableTreeNode<String> mutableTreeNode;
 	TreeNode<String,String> treeNode;
 
 	@Before
 	public void setUp() {
-		mutableTreeNode = SSMutableTreeNode.withValues(new String[] {
+		mutableTreeNode = SVMutableTreeNode.withStringValues(new String[] {
 				"H:G", // find g; find h
 				"F:G", // find g;(found) find f
 				"G:D", // find d; (not found) - add to root; find g (found) -- add to d
@@ -57,7 +57,7 @@ public class SSMutableTreeNodeTest {
 	public void testGet_type() {
 		Class<?> actualClass = mutableTreeNode.get(new TreePath<>(new String[] {"K8", "K3", "K4"})).getClass();
 		System.out.println( "actualClass=" + actualClass);
-		assertEquals(SSMutableTreeNode.class, actualClass);
+		assertEquals(SVMutableTreeNode.class, actualClass);
 	}
 
 	@Test
@@ -73,7 +73,7 @@ public class SSMutableTreeNodeTest {
 				"spring.jpa.hibernate.naming-strategy",
 				"spring.jpa.properties.hibernate.dialect"
 		};
-		SVMutableTreeNode<String> tree = SSMutableTreeNode.withPaths(flatProperties,'.');
+		SVMutableTreeNode<String> tree = SVMutableTreeNode.<String>withPaths(flatProperties,'.');
 		System.out.println( tree.generateTreeOutput() );
 	}
 

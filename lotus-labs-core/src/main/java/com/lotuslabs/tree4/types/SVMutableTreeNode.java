@@ -86,7 +86,7 @@ public class SVMutableTreeNode<V> extends MutableTreeNode<String, V> {
 	 * @return a mutable treenode
 	 */
 	public static <V> SVMutableTreeNode<V> withKeys(String[] keyPairs) {
-		return valueOf(keyPairs, ':');
+		return withKeys(keyPairs, ':');
 	}
 
 	/**
@@ -96,7 +96,7 @@ public class SVMutableTreeNode<V> extends MutableTreeNode<String, V> {
 	 * @param delimiter
 	 * @return mutable tree node based tuples of key pairs
 	 */
-	public static <V> SVMutableTreeNode<V> valueOf(String[] keyPairs, char delimiter) {
+	public static <V> SVMutableTreeNode<V> withKeys(String[] keyPairs, char delimiter) {
 		SVMutableTreeNode<V> root = null;
 
 		Map<String,SVMutableTreeNode<V>> ledger = new HashMap<>();
@@ -125,6 +125,73 @@ public class SVMutableTreeNode<V> extends MutableTreeNode<String, V> {
 		}
 		return root;
 	}
+
+
+	/**
+	 * Construct tree node based on value pairs and default key generation
+	 *
+	 * @param valuePairs tuple of <child,parent> pairs
+	 * @return a mutable treenode
+	 */
+	public static SVMutableTreeNode<String> withStringValues(String[] valuePairs) {
+		return withStringValues(valuePairs, (String value, Integer seq)-> "K"+seq, ':');
+	}
+
+	/**
+	 * Construct tree node based on value pairs and supplied key generation
+	 *
+	 * @param valuePairs tuple of <child,parent> pairs
+	 * @param keyGen key generator
+	 * @param delimiter
+	 * @return a mutable treenode
+	 */
+	public static SVMutableTreeNode<String> withStringValues(String[] valuePairs, KeyGenerator<String,String,Integer> keyGen, char delimiter ) {
+
+		/*
+		 * [0] - parent-child
+		 * [1] - associate new child to existing parent
+		 * [2] - update parent of existing parent
+		 * [3]
+		 *
+		 *
+		 */
+		SVMutableTreeNode<String> root = null;
+		if (keyGen==null)
+			keyGen = (String value, Integer seq)-> "K"+value;
+
+			Map<String,SVMutableTreeNode<String>> ledger = new HashMap<>();
+			int k = 0;
+			for (int i = 0; i < valuePairs.length; i++ ) {
+				String[] parts = valuePairs[i].split("\\" + delimiter);
+
+				if (! ledger.containsKey(parts[0]) ) {
+					String key = keyGen.generate(parts[0], k++);
+					ledger.put(parts[0], new SVMutableTreeNode<>(key,parts[0]));
+				}
+
+				// find if child exists
+				// find if parent exists
+				SVMutableTreeNode<String> childNode = ledger.get(parts[0]);
+
+				if (! ledger.containsKey(parts[1])) {
+					String key = keyGen.generate(parts[1], k++);
+					ledger.put(parts[1], new SVMutableTreeNode<>(key,parts[1]));
+				}
+
+				SVMutableTreeNode<String> parentNode = ledger.get(parts[1]);
+
+				parentNode.add(childNode);
+
+				if (parentNode.getParent() == null && parentNode != root) {
+					root = parentNode;
+				}
+			}
+
+			return root;
+	}
+
+
+
 
 	public static <V> SVMutableTreeNode<V> withPaths(Map<String,V> propertyMap, char delimiter) {
 		SVMutableTreeNode<V> root = new SVMutableTreeNode<>();
