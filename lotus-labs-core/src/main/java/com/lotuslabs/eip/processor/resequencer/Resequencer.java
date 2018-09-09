@@ -34,7 +34,13 @@ import org.apache.logging.log4j.Logger;
 
 /**
  * Resequence keys in order the Sequence Supplier dictates
- *
+ *  _________________________________________________
+ * |                              |                  |
+ * |                              |                  }
+ * |______________________________|__________________|
+ * |                              |                  |
+ * |<=====Soft Window Size==========>
+ * <========================Hard Window Limit=======>|
  * @author psurti
  *
  * @param <K>
@@ -42,7 +48,7 @@ import org.apache.logging.log4j.Logger;
  */
 public class Resequencer<K,V> {
 
-	private static final Logger logger = LogManager.getLogger(Resequencer.class.getName());
+	private static final Logger logger = LogManager.getLogger(Resequencer.class.getSimpleName());
 
 	private final Sequence<K, V> seq;
 	private final Comparator<K> comparator;
@@ -82,8 +88,8 @@ public class Resequencer<K,V> {
 		for (Map.Entry<Integer, AtomicInteger> entry : histo.entrySet()) {
 			os.write( (entry.getKey() + ":" + entry.getValue() + "\n").getBytes());
 		}
-		os.write( ("Ignored ids.size:" + ignoredKeys.size() + "\n" + ignoredKeys + "\n").getBytes() );
-		os.write( ("Max.size=" + this.histo.lastKey() + "\n").getBytes());
+		os.write( ("Skipped.Keys:" + ignoredKeys + "\nSkipped.Size=" + ignoredKeys.size() + "\n").getBytes() );
+		os.write( ("Max.Size=" + this.histo.lastKey() + "\n").getBytes());
 		os.write( ("Total=" + this.total + "\n").getBytes());
 		os.write( ("Pending=" + this.seq.size() +"\n").getBytes());
 	}
@@ -128,18 +134,18 @@ public class Resequencer<K,V> {
 		int compare = this.comparator.compare(key, this.expectKey);
 		if (compare < 0) {
 			if (logger.isDebugEnabled()) {
-				logger.debug("....IgnoreOld element :" + key + " compare="+compare);
+				logger.debug("....Add Old Event[Ignored] :" + key + " compare="+compare);
 			}
 			ignoredKeys.add(key);
 		} else {
 			if ((hardLimit == 0) || (hardLimit > 0 && this.seq.size() < hardLimit)) {
 				prevValue = this.seq.put(key, value);
 				if (logger.isDebugEnabled()) {
-					logger.debug( "...Adding element :" + key + " compare="+compare);
+					logger.debug( "...Add New Event[Added] :" + key + " compare="+compare);
 				}
 			} else  {
 				if (logger.isDebugEnabled()) {
-					logger.debug( "...Crossed Hard Limit - Dropped:" + key);
+					logger.debug( "...Crossed Hard Limit[Dropped] :" + key);
 				}
 			}
 		}
@@ -162,7 +168,7 @@ public class Resequencer<K,V> {
 					this.comparator.compare(this.seq.firstKey(), this.expectKey) < 0) {
 				Entry<K, V> oldEntry = this.seq.pollFirstEntry();
 				if (logger.isDebugEnabled()) {
-					logger.debug("---Removed Old Entry:" + oldEntry.getKey());
+					logger.debug("---Old Entry[Removed] :" + oldEntry.getKey());
 				}
 				continue;
 			}
@@ -177,7 +183,7 @@ public class Resequencer<K,V> {
 				if (seq.size() >= softLimit) {
 					Map.Entry<K, V> first = seq.pollFirstEntry();
 					if (logger.isDebugEnabled()) {
-						logger.debug( "Processed(skip) : " + first.getValue());
+						logger.debug( "Processed[SkipAt] : " + first.getValue());
 					}
 					if (c != null)
 						c.accept(first.getKey(), first.getValue());
