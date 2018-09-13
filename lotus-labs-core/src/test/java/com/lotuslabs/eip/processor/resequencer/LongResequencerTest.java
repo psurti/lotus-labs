@@ -6,6 +6,10 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 import org.junit.After;
 import org.junit.Before;
@@ -87,6 +91,100 @@ public class LongResequencerTest {
 		r.dumpStats(System.out);
 		System.out.println("time taken(ms):" + etime);
 
+	}
+
+	@Test
+	public void testConsumeTimer() throws IOException, InterruptedException {
+		long start = System.currentTimeMillis();
+		Timer t = new Timer();
+		final AtomicInteger emptyIterations = new AtomicInteger(0);
+		final AtomicInteger consumed = new AtomicInteger(0);
+
+		TimerTask task = new TimerTask() {
+
+			@Override
+			public void run() {
+				System.out.println( "---TIMER---");
+				if (r.isPending()) {
+					r.consume(new Consumer<Long, String>() {
+
+						@Override
+						public void accept(Long k, String v) {
+							consumed.incrementAndGet();
+						}
+					});
+				} else {
+					emptyIterations.incrementAndGet();
+				}
+			}
+		};
+		t.schedule(task, 0, 10);
+		for (String line : readLines) {
+			String[] pairs = line.split(":");
+			String value = pairs[1].trim();
+			Long key = new Long(Long.valueOf(value));
+			r.put(key, value);
+		}
+
+		while (emptyIterations.get() < 5 ) {
+			Thread.sleep(10);
+		}
+		t.cancel();
+		long etime = (System.currentTimeMillis()-start);
+		r.dumpStats(System.out);
+		System.out.println("time taken(ms):" + etime);
+		System.out.println( "Consumed:" + consumed.get());
+	}
+
+	@Test
+	/*
+	 * This test is not working correctly
+	 */
+	public void testConsumeNanoTimer() throws IOException, InterruptedException {
+		long start = System.currentTimeMillis();
+		final AtomicInteger emptyIterations = new AtomicInteger(0);
+		final AtomicInteger consumed = new AtomicInteger(0);
+		final AtomicLong timer = new AtomicLong(System.nanoTime());
+		Runnable task = new Runnable() {
+			@Override
+			public void run() {
+				while (emptyIterations.get() < 1) {
+					long startTimer = System.nanoTime();
+					long delta = startTimer-timer.get();
+					if (delta < 1_000_000)
+						continue;
+					timer.set(startTimer);
+					System.out.println( "---TIMER--- delta:" + delta + " pending=" + r.isPending());
+					{
+						while (r.isPending()) {
+							r.consume(new Consumer<Long, String>() {
+								@Override
+								public void accept(Long k, String v) {
+									consumed.incrementAndGet();
+								}
+							});
+						}
+					}
+				}
+			}
+		};
+		Thread thr = new Thread(task);
+		thr.start();
+		for (String line : readLines) {
+			String[] pairs = line.split(":");
+			String value = pairs[1].trim();
+			Long key = new Long(Long.valueOf(value));
+			{
+				r.put(key, value);
+			}
+		}
+		emptyIterations.set(1);//completed
+		thr.join();
+		System.out.println( "empty.iter=" + emptyIterations.get());
+		long etime = (System.currentTimeMillis()-start);
+		r.dumpStats(System.out);
+		System.out.println("time taken(ms):" + etime);
+		System.out.println( "Consumed:" + consumed.get());
 	}
 
 
