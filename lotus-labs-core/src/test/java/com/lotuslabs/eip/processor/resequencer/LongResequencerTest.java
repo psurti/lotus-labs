@@ -44,13 +44,14 @@ public class LongResequencerTest {
 	@Before
 	public void setUp() throws IOException {
 		it = IntervalType.BY_FIXED_BATCH;
-		int softLimit = 100;
-		int hardLimit = 0;
+		int softLimit = 1000;
+		int hardLimit = 1000;
 		System.out.println("intervalType: " + it.name() + " of "  + it.value());
 		System.out.println("softLimit=" + softLimit);
 		System.out.println("hardLimit=" + hardLimit);
 		System.out.println("-------------------------");
 		r = new LongResequencer<>(softLimit, hardLimit);
+		r.enableMetrics();
 
 		InputStream resourceAsStream = new FileInputStream(
 				System.getProperty("user.dir") +
@@ -138,34 +139,38 @@ public class LongResequencerTest {
 
 	@Test
 	/*
-	 * This test is not working correctly
+	 * This test is not working correctly whe hard limit=100
 	 */
 	public void testConsumeNanoTimer() throws IOException, InterruptedException {
+		System.in.read();
 		long start = System.currentTimeMillis();
 		final AtomicInteger emptyIterations = new AtomicInteger(0);
 		final AtomicInteger consumed = new AtomicInteger(0);
 		final AtomicLong timer = new AtomicLong(System.nanoTime());
+		final Consumer<Long,String> c = new Consumer<Long, String>() {
+			@Override
+			public void accept(Long k, String v) {
+				consumed.incrementAndGet();
+			}
+		};
 		Runnable task = new Runnable() {
 			@Override
 			public void run() {
 				while (emptyIterations.get() < 1) {
 					long startTimer = System.nanoTime();
 					long delta = startTimer-timer.get();
-					if (delta < 1_000_000)
+					if (delta < 10_000)
 						continue;
-					timer.set(startTimer);
 					System.out.println( "---TIMER--- delta:" + delta + " pending=" + r.isPending());
 					{
-						while (r.isPending()) {
-							r.consume(new Consumer<Long, String>() {
-								@Override
-								public void accept(Long k, String v) {
-									consumed.incrementAndGet();
-								}
-							});
+						if (r.isPending()) {
+							r.consume(c);
 						}
+						timer.set(startTimer);
 					}
 				}
+
+				r.flush(c);
 			}
 		};
 		Thread thr = new Thread(task);

@@ -57,7 +57,9 @@ public class Resequencer<K,V> {
 	private final int hardLimit;
 	private K expectKey;
 	private List<K> ignoredKeys;
-	private final ConcurrentSkipListMap<Integer,AtomicInteger> histo;
+	private List<K> skippedKeys;
+	private List<K> droppedKeys;
+	private ConcurrentSkipListMap<Integer,AtomicInteger> histo;
 	private int total = 0;
 
 	/**
@@ -74,8 +76,17 @@ public class Resequencer<K,V> {
 		this.hardLimit = hardLimit;
 		this.softLimit = (hardLimit > 0) ? hardLimit : softLimit;
 		this.expectKey = this.expector.get(null);
+	}
+
+	/*
+	 * Public enable metric collection
+	 */
+	public Resequencer<K, V> enableMetrics() {
 		this.ignoredKeys = new ArrayList<>();
+		this.skippedKeys = new ArrayList<>();
+		this.droppedKeys = new ArrayList<>();
 		this.histo = new ConcurrentSkipListMap<>();
+		return this;
 	}
 
 	/**
@@ -85,11 +96,21 @@ public class Resequencer<K,V> {
 	 * @throws IOException
 	 */
 	public void dumpStats(OutputStream os) throws IOException {
-		for (Map.Entry<Integer, AtomicInteger> entry : histo.entrySet()) {
-			os.write( (entry.getKey() + ":" + entry.getValue() + "\n").getBytes());
+		if (this.histo != null) {
+			for (Map.Entry<Integer, AtomicInteger> entry : histo.entrySet()) {
+				os.write( (entry.getKey() + ":" + entry.getValue() + "\n").getBytes());
+			}
+			os.write( ("Max.Size=" + this.histo.lastKey() + "\n").getBytes());
 		}
-		os.write( ("Skipped.Keys:" + ignoredKeys + "\nSkipped.Size=" + ignoredKeys.size() + "\n").getBytes() );
-		os.write( ("Max.Size=" + this.histo.lastKey() + "\n").getBytes());
+		if (this.ignoredKeys != null) {
+			os.write( ("[IGNORED].Keys:" + ignoredKeys + "\n[IGNORED].Size=" + ignoredKeys.size() + "\n").getBytes() );
+		}
+		if (this.skippedKeys != null) {
+			os.write( ("[SKIPPED].Keys:" + skippedKeys + "\n[SKIPPED].Size=" + skippedKeys.size() + "\n").getBytes() );
+		}
+		if (this.droppedKeys != null) {
+			os.write( ("[DROPPED].Keys:" + droppedKeys + "\n[DROPPED].Size=" + droppedKeys.size() + "\n").getBytes() );
+		}
 		os.write( ("Total=" + this.total + "\n").getBytes());
 		os.write( ("Pending=" + this.seq.size() +"\n").getBytes());
 	}
@@ -108,13 +129,15 @@ public class Resequencer<K,V> {
 	 * Internal collection of buffer
 	 * queue
 	 */
-	private void checkBufferSize(int bufSize) {
-		AtomicInteger cnts = histo.get(bufSize);
-		if (cnts == null) {
-			cnts = new AtomicInteger(1);
-			histo.put(bufSize, cnts);
-		} else {
-			cnts.incrementAndGet();
+	private void updateHistogramMetric(int bufSize) {
+		if (histo != null) {
+			AtomicInteger cnts = histo.get(bufSize);
+			if (cnts == null) {
+				cnts = new AtomicInteger(1);
+				histo.put(bufSize, cnts);
+			} else {
+				cnts.incrementAndGet();
+			}
 		}
 	}
 
@@ -136,7 +159,7 @@ public class Resequencer<K,V> {
 			if (logger.isDebugEnabled()) {
 				logger.debug("....Add Old Event[Ignored] :" + key + " compare="+compare);
 			}
-			ignoredKeys.add(key);
+			if (ignoredKeys != null) this.ignoredKeys.add(key);
 		} else {
 			if ((hardLimit == 0) || (hardLimit > 0 && this.seq.size() < hardLimit)) {
 				prevValue = this.seq.put(key, value);
@@ -147,21 +170,30 @@ public class Resequencer<K,V> {
 				if (logger.isDebugEnabled()) {
 					logger.debug( "...Crossed Hard Limit[Dropped] :" + key);
 				}
+				if (droppedKeys != null) this.droppedKeys.add(key);
 			}
 		}
 		return prevValue;
 	}
 
 	/**
-	 * Consume data by the Cosumer
+	 * Consume data base on limits
 	 * @param c
 	 */
 	public void consume(Consumer<K,V> c) {
+		consume(c, false);
+	}
+
+	/**
+	 * Consume data by the Cosumer
+	 * @param c
+	 */
+	private void consume(Consumer<K,V> c, boolean flush) {
 		long start = System.currentTimeMillis();
 		if (logger.isDebugEnabled()) {
 			logger.debug( "buffer.size=" + seq.size());
 		}
-		checkBufferSize(this.seq.size());
+		if (this.histo != null) updateHistogramMetric(this.seq.size());
 		boolean loop = true;
 		while(loop) {
 			if ((!this.seq.isEmpty()) &&
@@ -180,14 +212,17 @@ public class Resequencer<K,V> {
 					logger.debug( "Processed : " + remove );
 				}
 			} else {
-				if (seq.size() >= softLimit) {
+				if (flush && !seq.isEmpty() || seq.size() >= softLimit) {
 					Map.Entry<K, V> first = seq.pollFirstEntry();
-					if (logger.isDebugEnabled()) {
-						logger.debug( "Processed[SkipAt] : " + first.getValue());
+					if (first != null) {
+						if (logger.isDebugEnabled()) {
+							logger.debug( "Processed[SkipAt] : " + first.getValue());
+						}
+						if (this.skippedKeys != null) this.skippedKeys.add(this.expectKey);
+						if (c != null)
+							c.accept(first.getKey(), first.getValue());
+						this.expectKey = this.expector.get(first.getKey());
 					}
-					if (c != null)
-						c.accept(first.getKey(), first.getValue());
-					this.expectKey = this.expector.get(first.getKey());
 				} else {
 					loop = false;
 				}
@@ -196,5 +231,15 @@ public class Resequencer<K,V> {
 		if (logger.isDebugEnabled()) {
 			logger.debug( "++consume.time=" + (System.currentTimeMillis()-start));
 		}
+	}
+
+	/**
+	 * Call flush to processing any
+	 * pending data
+	 *
+	 * @param c
+	 */
+	public void flush(Consumer<K,V> c) {
+		consume(c, true);
 	}
 }

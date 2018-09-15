@@ -33,4 +33,6 @@ public class LongResequencer<V> extends Resequencer<Long, V>{
 			return Long.valueOf(previous.longValue()+1);
 		}
 	};
-};
+
+
+}
