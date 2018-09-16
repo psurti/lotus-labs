@@ -51,6 +51,14 @@ public class LongResequencerTest {
 		@Override
 		public void accept(Long k, String v) {
 			consumed.incrementAndGet();
+			if (consumerDelayMS == 0)
+				return;
+
+			try {
+				Thread.sleep(consumerDelayMS);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
 		}
 	};
 	//parameters
@@ -58,6 +66,7 @@ public class LongResequencerTest {
 	private int softLimit;
 	private int hardLimit;
 	private boolean collectMetrics;
+	private long consumerDelayMS;
 
 	public LongResequencerTest() {
 	}
@@ -66,11 +75,12 @@ public class LongResequencerTest {
 	public void setUp() throws IOException {
 		it = IntervalType.BY_FIXED_BATCH;
 		softLimit = 1000;
-		hardLimit = 1000;
+		hardLimit = 0;
+		consumerDelayMS = 100;
 		consumed = new AtomicInteger(0);
 
 		r = new LongResequencer<>(softLimit, hardLimit);
-		//		collectMetrics = r.enableMetrics() != null;
+		collectMetrics = r.enableMetrics() != null;
 
 		InputStream resourceAsStream = new FileInputStream(
 				System.getProperty("user.dir") +
@@ -88,12 +98,13 @@ public class LongResequencerTest {
 		System.out.println("intervalType: " + it.name() + " of "  + it.value());
 		System.out.println("softLimit=" + softLimit);
 		System.out.println("hardLimit=" + hardLimit);
+		System.out.println("consumerDelay(ms)=" + consumerDelayMS);
 		System.out.println("collectMetrics=" + collectMetrics);
 		System.out.println( val );
 	}
 
 	@Test
-	public void testConsumeNanoTimeDiff() throws IOException {
+	public void testConsumeFixedNanoTimeDiff() throws IOException {
 		it = IntervalType.BY_TIMER_NS;
 		startTest("Consume by TimeDiff(nano) with single Thread");
 		testConsume();
@@ -131,7 +142,7 @@ public class LongResequencerTest {
 		r.flush(c);
 		long etime = (System.currentTimeMillis()-start);
 		r.dumpStats(System.out);
-		System.out.println("time taken(ms):" + etime);
+		timeTaken(etime);
 		System.out.println( "Consumed:" + consumed.get());
 	}
 
@@ -139,7 +150,6 @@ public class LongResequencerTest {
 	public void testConsumeTimer() throws IOException, InterruptedException {
 		startTest("Consume with FIXED TIMER TASK Thread");
 
-		long start = System.currentTimeMillis();
 		Timer t = new Timer();
 		final AtomicInteger emptyIterations = new AtomicInteger(0);
 
@@ -156,27 +166,30 @@ public class LongResequencerTest {
 						r.flush(c);
 						emptyIterations.set(-1);
 					}
+				} else {
+					if (emptyIterations.get() > 0) {
+						emptyIterations.set(-1);
+					}
 				}
 			}
 		};
 		t.schedule(task, 0, 10);
+
+		long start = System.currentTimeMillis();
 		for (String line : readLines) {
 			String[] pairs = line.split(":");
 			String value = pairs[1].trim();
 			Long key = new Long(Long.valueOf(value));
 			r.put(key, value);
 		}
-
 		emptyIterations.incrementAndGet();
-
 		while (emptyIterations.get() >= 0) {
-			System.out.println( "emptyIter=" + emptyIterations.get());
 			Thread.sleep(10);
 		}
-		t.cancel();
 		long etime = (System.currentTimeMillis()-start);
+		t.cancel();
 		r.dumpStats(System.out);
-		System.out.println("time taken(ms):" + etime);
+		timeTaken(etime);
 		System.out.println( "Consumed:" + consumed.get());
 	}
 
@@ -187,7 +200,6 @@ public class LongResequencerTest {
 	 */
 	public void testConsumeNanoTimer() throws IOException, InterruptedException {
 		startTest("Consume with NANO TIMER Thread");
-		long start = System.currentTimeMillis();
 		final AtomicInteger emptyIterations = new AtomicInteger(0);
 		final AtomicLong timer = new AtomicLong(System.nanoTime());
 		Runnable task = new Runnable() {
@@ -214,6 +226,7 @@ public class LongResequencerTest {
 		};
 		Thread thr = new Thread(task);
 		thr.start();
+		long start = System.currentTimeMillis();
 		for (String line : readLines) {
 			String[] pairs = line.split(":");
 			String value = pairs[1].trim();
@@ -224,13 +237,21 @@ public class LongResequencerTest {
 		}
 		emptyIterations.set(1);//completed
 		thr.join();
-		System.out.println( "empty.iter=" + emptyIterations.get());
 		long etime = (System.currentTimeMillis()-start);
+		System.out.println( "empty.iter=" + emptyIterations.get());
 		r.dumpStats(System.out);
-		System.out.println("time taken(ms):" + etime);
+		timeTaken(etime);
 		System.out.println( "Consumed:" + consumed.get());
 	}
 
+	private void timeTaken(long durationInMillis) {
+		long millis = durationInMillis % 1000;
+		long second = (durationInMillis / 1000) % 60;
+		long minute = (durationInMillis / (1000 * 60)) % 60;
+		long hour = (durationInMillis / (1000 * 60 * 60)) % 24;
+		String time = String.format("%02dh:%02dm:%02d.%ds", hour, minute, second, millis);
+		System.out.println("time taken:" + time);
+	}
 
 	@After
 	public void tearDown() {

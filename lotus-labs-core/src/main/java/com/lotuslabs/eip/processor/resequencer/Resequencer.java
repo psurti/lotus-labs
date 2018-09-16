@@ -195,9 +195,9 @@ public class Resequencer<K,V> {
 			logger.debug( "buffer.size=" + seq.size());
 		}
 		if (this.histo != null) updateHistogramMetric(this.seq.size());
-		maxSeqSize = Math.max(maxSeqSize, seq.size());
 		boolean loop = true;
 		while(loop) {
+			maxSeqSize = Math.max(maxSeqSize, seq.size());
 			if ((!this.seq.isEmpty()) &&
 					this.comparator.compare(this.seq.firstKey(), this.expectKey) < 0) {
 				Entry<K, V> oldEntry = this.seq.pollFirstEntry();
