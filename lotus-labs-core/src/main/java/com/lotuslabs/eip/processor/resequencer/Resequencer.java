@@ -56,7 +56,7 @@ public class Resequencer<K,V> {
 	private final int softLimit;
 	private final int hardLimit;
 	private K expectKey;
-	private List<K> ignoredKeys;
+	private List<K> discardKeys;
 	private List<K> skippedKeys;
 	private List<K> droppedKeys;
 	private ConcurrentSkipListMap<Integer,AtomicInteger> histo;
@@ -83,7 +83,7 @@ public class Resequencer<K,V> {
 	 * Public enable metric collection
 	 */
 	public Resequencer<K, V> enableMetrics() {
-		this.ignoredKeys = new ArrayList<>();
+		this.discardKeys = new ArrayList<>();
 		this.skippedKeys = new ArrayList<>();
 		this.droppedKeys = new ArrayList<>();
 		this.histo = new ConcurrentSkipListMap<>();
@@ -102,8 +102,8 @@ public class Resequencer<K,V> {
 				os.write( (entry.getKey() + ":" + entry.getValue() + "\n").getBytes());
 			}
 		}
-		if (this.ignoredKeys != null) {
-			os.write( ("[IGNORED].Keys:" + ignoredKeys + "\n[IGNORED].Size=" + ignoredKeys.size() + "\n").getBytes() );
+		if (this.discardKeys != null) {
+			os.write( ("[DISCARD].Keys:" + discardKeys + "\n[DISCARD].Size=" + discardKeys.size() + "\n").getBytes() );
 		}
 		if (this.skippedKeys != null) {
 			os.write( ("[SKIPPED].Keys:" + skippedKeys + "\n[SKIPPED].Size=" + skippedKeys.size() + "\n").getBytes() );
@@ -158,9 +158,9 @@ public class Resequencer<K,V> {
 		int compare = this.comparator.compare(key, this.expectKey);
 		if (compare < 0) {
 			if (logger.isDebugEnabled()) {
-				logger.debug("....Add Old Event[Ignored] :" + key + " compare="+compare);
+				logger.debug("....Add Old Event[Discard] :" + key + " compare="+compare);
 			}
-			if (ignoredKeys != null) this.ignoredKeys.add(key);
+			if (discardKeys != null) this.discardKeys.add(key);
 		} else {
 			if ((hardLimit == 0) || (hardLimit > 0 && this.seq.size() < hardLimit)) {
 				prevValue = this.seq.put(key, value);
