@@ -9,6 +9,7 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -29,8 +30,9 @@ public class LongResequencerTest {
 	private static final Logger logger = LogManager.getLogger(LongResequencerTest.class.getSimpleName());
 
 	enum IntervalType {
-		BY_FIXED_BATCH(3),
-		BY_TIMER_NS(10000);
+		FIXED_BATCH(3),
+		FIXED_TIME_NS(10000),
+		FIXED_TIMER_MS(10);
 		private int val = 0;
 		IntervalType(int val) {
 			this.val = val;
@@ -38,6 +40,13 @@ public class LongResequencerTest {
 		public int value() {
 			return this.val;
 		}
+	}
+
+	enum State {
+		PRODUCER_STARTED,
+		PRODUCER_COMPLETED,
+		CONSUMER_STARTED,
+		CONSUMER_COMPLETED;
 	}
 
 	//processor
@@ -73,14 +82,14 @@ public class LongResequencerTest {
 
 	@Before
 	public void setUp() throws IOException {
-		it = IntervalType.BY_FIXED_BATCH;
-		softLimit = 1000;
+		it = IntervalType.FIXED_BATCH;
+		softLimit = 100;
 		hardLimit = 0;
-		consumerDelayMS = 100;
+		consumerDelayMS = 0;
 		consumed = new AtomicInteger(0);
 
 		r = new LongResequencer<>(softLimit, hardLimit);
-		collectMetrics = r.enableMetrics() != null;
+		//		collectMetrics = r.enableMetrics() != null;
 
 		InputStream resourceAsStream = new FileInputStream(
 				System.getProperty("user.dir") +
@@ -105,15 +114,15 @@ public class LongResequencerTest {
 
 	@Test
 	public void testConsumeFixedNanoTimeDiff() throws IOException {
-		it = IntervalType.BY_TIMER_NS;
-		startTest("Consume by TimeDiff(nano) with single Thread");
+		it = IntervalType.FIXED_TIME_NS;
+		startTest("Consume by FIXED TIME(nano) - 1 Thread");
 		testConsume();
 	}
 
 	@Test
 	public void testConsumeFixedBatch() throws IOException {
-		it = IntervalType.BY_FIXED_BATCH;
-		startTest("Consume By FIXED BATCH with single Thread");
+		it = IntervalType.FIXED_BATCH;
+		startTest("Consume By FIXED BATCH - 1 Thread");
 		testConsume();
 	}
 
@@ -129,12 +138,12 @@ public class LongResequencerTest {
 			Long key = new Long(Long.valueOf(value));
 			r.put(key, value);
 			// If elementInterval == 0 then check based on timer
-			if (it == IntervalType.BY_TIMER_NS && System.nanoTime()-timer >= it.value()) {
+			if (it == IntervalType.FIXED_TIME_NS && System.nanoTime()-timer >= it.value()) {
 				if (r.isPending()) r.consume(c);
 				timer = System.nanoTime();
 			}
 			// If elementInterval > 0 then check based element.size
-			if (it == IntervalType.BY_FIXED_BATCH && (i % it.value() == 0)) {
+			if (it == IntervalType.FIXED_BATCH && (i % it.value() == 0)) {
 				if (r.isPending()) r.consume(c);
 			}
 			i++;
@@ -148,11 +157,11 @@ public class LongResequencerTest {
 
 	@Test
 	public void testConsumeTimer() throws IOException, InterruptedException {
-		startTest("Consume with FIXED TIMER TASK Thread");
+		it = IntervalType.FIXED_TIMER_MS;
+		startTest("Consume with FIXED TIMER(ms) Task Thread");
 
 		Timer t = new Timer();
-		final AtomicInteger emptyIterations = new AtomicInteger(0);
-
+		final AtomicReference<State> state = new AtomicReference<>(State.PRODUCER_STARTED);
 		TimerTask task = new TimerTask() {
 
 			@Override
@@ -160,20 +169,20 @@ public class LongResequencerTest {
 				if (logger.isDebugEnabled())
 					logger.debug("---TIMER---");
 				if (r.isPending()) {
-					if (emptyIterations.get() == 0) {
+					if (state.get() == State.PRODUCER_STARTED) {
 						r.consume(c);
 					} else {
 						r.flush(c);
-						emptyIterations.set(-1);
+						state.set(State.CONSUMER_COMPLETED);
 					}
 				} else {
-					if (emptyIterations.get() > 0) {
-						emptyIterations.set(-1);
+					if (state.get() == State.PRODUCER_COMPLETED) {
+						state.set(State.CONSUMER_COMPLETED);
 					}
 				}
 			}
 		};
-		t.schedule(task, 0, 10);
+		t.schedule(task, 0, it.val);
 
 		long start = System.currentTimeMillis();
 		for (String line : readLines) {
@@ -182,8 +191,8 @@ public class LongResequencerTest {
 			Long key = new Long(Long.valueOf(value));
 			r.put(key, value);
 		}
-		emptyIterations.incrementAndGet();
-		while (emptyIterations.get() >= 0) {
+		state.set(State.PRODUCER_COMPLETED);
+		while (state.get() != State.CONSUMER_COMPLETED) {
 			Thread.sleep(10);
 		}
 		long etime = (System.currentTimeMillis()-start);
@@ -199,16 +208,17 @@ public class LongResequencerTest {
 	 * retrieves every n nano-seconds.
 	 */
 	public void testConsumeNanoTimer() throws IOException, InterruptedException {
-		startTest("Consume with NANO TIMER Thread");
-		final AtomicInteger emptyIterations = new AtomicInteger(0);
+		it = IntervalType.FIXED_TIME_NS;
+		startTest("Consume with FIXED TIMER(nano) Thread");
+		final AtomicReference<State> state = new AtomicReference<>(State.PRODUCER_STARTED);
 		final AtomicLong timer = new AtomicLong(System.nanoTime());
 		Runnable task = new Runnable() {
 			@Override
 			public void run() {
-				while (emptyIterations.get() < 1) {
+				while (state.get() == State.PRODUCER_STARTED) {
 					long startTimer = System.nanoTime();
 					long delta = startTimer-timer.get();
-					if (delta < 10_000)
+					if (delta < it.val)
 						continue;
 					if (logger.isDebugEnabled()) {
 						logger.debug( "---TIMER--- delta:" + delta + " pending=" + r.isPending());
@@ -235,10 +245,9 @@ public class LongResequencerTest {
 				r.put(key, value);
 			}
 		}
-		emptyIterations.set(1);//completed
+		state.set(State.PRODUCER_COMPLETED);
 		thr.join();
 		long etime = (System.currentTimeMillis()-start);
-		System.out.println( "empty.iter=" + emptyIterations.get());
 		r.dumpStats(System.out);
 		timeTaken(etime);
 		System.out.println( "Consumed:" + consumed.get());
