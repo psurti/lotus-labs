@@ -61,6 +61,7 @@ public class Resequencer<K,V> {
 	private List<K> droppedKeys;
 	private ConcurrentSkipListMap<Integer,AtomicInteger> histo;
 	private int total = 0;
+	private int maxSeqSize =0;
 
 	/**
 	 * Constructor
@@ -100,7 +101,6 @@ public class Resequencer<K,V> {
 			for (Map.Entry<Integer, AtomicInteger> entry : histo.entrySet()) {
 				os.write( (entry.getKey() + ":" + entry.getValue() + "\n").getBytes());
 			}
-			os.write( ("Max.Size=" + this.histo.lastKey() + "\n").getBytes());
 		}
 		if (this.ignoredKeys != null) {
 			os.write( ("[IGNORED].Keys:" + ignoredKeys + "\n[IGNORED].Size=" + ignoredKeys.size() + "\n").getBytes() );
@@ -111,6 +111,7 @@ public class Resequencer<K,V> {
 		if (this.droppedKeys != null) {
 			os.write( ("[DROPPED].Keys:" + droppedKeys + "\n[DROPPED].Size=" + droppedKeys.size() + "\n").getBytes() );
 		}
+		os.write( ("Max.Unseq.Size=" + this.maxSeqSize + "\n").getBytes());
 		os.write( ("Total=" + this.total + "\n").getBytes());
 		os.write( ("Pending=" + this.seq.size() +"\n").getBytes());
 	}
@@ -194,6 +195,7 @@ public class Resequencer<K,V> {
 			logger.debug( "buffer.size=" + seq.size());
 		}
 		if (this.histo != null) updateHistogramMetric(this.seq.size());
+		maxSeqSize = Math.max(maxSeqSize, seq.size());
 		boolean loop = true;
 		while(loop) {
 			if ((!this.seq.isEmpty()) &&
