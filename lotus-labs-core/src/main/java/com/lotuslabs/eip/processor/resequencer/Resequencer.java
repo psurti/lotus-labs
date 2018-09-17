@@ -29,8 +29,8 @@ import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Resequence keys in order the Sequence Supplier dictates
@@ -48,7 +48,7 @@ import org.apache.logging.log4j.Logger;
  */
 public class Resequencer<K,V> {
 
-	private static final Logger logger = LogManager.getLogger(Resequencer.class.getSimpleName());
+	private static final Logger logger = LoggerFactory.getLogger(Resequencer.class);
 
 	private final Sequence<K, V> seq;
 	private final Comparator<K> comparator;

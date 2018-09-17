@@ -11,11 +11,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.lotuslabs.log.Log4J2;
 
@@ -27,7 +27,7 @@ public class LongResequencerTest {
 		Log4J2.init();
 	}
 
-	private static final Logger logger = LogManager.getLogger(LongResequencerTest.class.getSimpleName());
+	private static Logger logger = LoggerFactory.getLogger(LongResequencerTest.class);
 
 	enum IntervalType {
 		FIXED_BATCH(3),
@@ -135,7 +135,7 @@ public class LongResequencerTest {
 		for (String line : readLines) {
 			String[] pairs = line.split(":");
 			String value = pairs[1].trim();
-			Long key = new Long(Long.valueOf(value));
+			Long key = Long.valueOf(value);
 			r.put(key, value);
 			// If elementInterval == 0 then check based on timer
 			if (it == IntervalType.FIXED_TIME_NS && System.nanoTime()-timer >= it.value()) {
@@ -188,7 +188,7 @@ public class LongResequencerTest {
 		for (String line : readLines) {
 			String[] pairs = line.split(":");
 			String value = pairs[1].trim();
-			Long key = new Long(Long.valueOf(value));
+			Long key = Long.valueOf(value);
 			r.put(key, value);
 		}
 		state.set(State.PRODUCER_COMPLETED);
@@ -240,7 +240,7 @@ public class LongResequencerTest {
 		for (String line : readLines) {
 			String[] pairs = line.split(":");
 			String value = pairs[1].trim();
-			Long key = new Long(Long.valueOf(value));
+			Long key = Long.valueOf(value);
 			{
 				r.put(key, value);
 			}
