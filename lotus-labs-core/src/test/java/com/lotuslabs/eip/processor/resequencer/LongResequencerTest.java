@@ -102,14 +102,14 @@ public class LongResequencerTest {
 
 	private void startTest(String name) {
 		String val = String.format("%0" + 40 + "d", 0).replace("0", "=");
-		System.out.println( val );
-		System.out.format("%10s\n", name);
-		System.out.println("intervalType: " + it.name() + " of "  + it.value());
-		System.out.println("softLimit=" + softLimit);
-		System.out.println("hardLimit=" + hardLimit);
-		System.out.println("consumerDelay(ms)=" + consumerDelayMS);
-		System.out.println("collectMetrics=" + collectMetrics);
-		System.out.println( val );
+		logger.info( val );
+		logger.info(String.format("%10s", name));
+		logger.info("intervalType: " + it.name() + " of "  + it.value());
+		logger.info("softLimit=" + softLimit);
+		logger.info("hardLimit=" + hardLimit);
+		logger.info("consumerDelay(ms)=" + consumerDelayMS);
+		logger.info("collectMetrics=" + collectMetrics);
+		logger.info( val );
 	}
 
 	@Test
@@ -152,7 +152,7 @@ public class LongResequencerTest {
 		long etime = (System.currentTimeMillis()-start);
 		r.dumpStats(System.out);
 		timeTaken(etime);
-		System.out.println( "Consumed:" + consumed.get());
+		logger.info( "Consumed:" + consumed.get());
 	}
 
 	@Test
@@ -199,7 +199,7 @@ public class LongResequencerTest {
 		t.cancel();
 		r.dumpStats(System.out);
 		timeTaken(etime);
-		System.out.println( "Consumed:" + consumed.get());
+		logger.info( "Consumed:" + consumed.get());
 	}
 
 	@Test
@@ -250,7 +250,7 @@ public class LongResequencerTest {
 		long etime = (System.currentTimeMillis()-start);
 		r.dumpStats(System.out);
 		timeTaken(etime);
-		System.out.println( "Consumed:" + consumed.get());
+		logger.info( "Consumed:" + consumed.get());
 	}
 
 	private void timeTaken(long durationInMillis) {
@@ -259,11 +259,11 @@ public class LongResequencerTest {
 		long minute = (durationInMillis / (1000 * 60)) % 60;
 		long hour = (durationInMillis / (1000 * 60 * 60)) % 24;
 		String time = String.format("%02dh:%02dm:%02d.%ds", hour, minute, second, millis);
-		System.out.println("time taken:" + time);
+		logger.info("time taken:" + time);
 	}
 
 	@After
 	public void tearDown() {
-		System.out.println("\n\n");
+		logger.info("\n\n");
 	}
 }
