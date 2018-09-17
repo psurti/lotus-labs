@@ -158,18 +158,18 @@ public class Resequencer<K,V> {
 		int compare = this.comparator.compare(key, this.expectKey);
 		if (compare < 0) {
 			if (logger.isDebugEnabled()) {
-				logger.debug("....Add Old Event[Discard] :" + key + " compare="+compare);
+				logger.debug("....Add Old Event[Discard] :{} compare={}" ,key, compare);
 			}
 			if (discardKeys != null) this.discardKeys.add(key);
 		} else {
 			if ((hardLimit == 0) || (hardLimit > 0 && this.seq.size() < hardLimit)) {
 				prevValue = this.seq.put(key, value);
 				if (logger.isDebugEnabled()) {
-					logger.debug( "...Add New Event[Added] :" + key + " compare="+compare);
+					logger.debug( "...Add New Event[Added] :{} compare={}",key, compare);
 				}
 			} else  {
 				if (logger.isDebugEnabled()) {
-					logger.debug( "...Crossed Hard Limit[Dropped] :" + key);
+					logger.debug( "...Crossed Hard Limit[Dropped] :{}", key);
 				}
 				if (droppedKeys != null) this.droppedKeys.add(key);
 			}
@@ -192,7 +192,7 @@ public class Resequencer<K,V> {
 	private void consume(Consumer<K,V> c, boolean flush) {
 		long start = System.currentTimeMillis();
 		if (logger.isDebugEnabled()) {
-			logger.debug( "buffer.size=" + seq.size());
+			logger.debug( "buffer.size={}" , seq.size());
 		}
 		if (this.histo != null) updateHistogramMetric(this.seq.size());
 		boolean loop = true;
@@ -202,7 +202,7 @@ public class Resequencer<K,V> {
 					this.comparator.compare(this.seq.firstKey(), this.expectKey) < 0) {
 				Entry<K, V> oldEntry = this.seq.pollFirstEntry();
 				if (logger.isDebugEnabled()) {
-					logger.debug("---Old Entry[Removed] :" + oldEntry.getKey());
+					logger.debug("---Old Entry[Removed] : {}" , oldEntry.getKey());
 				}
 				continue;
 			}
@@ -211,14 +211,14 @@ public class Resequencer<K,V> {
 				if (c != null) c.accept(this.expectKey, remove);
 				this.expectKey = this.expector.get(this.expectKey);
 				if (logger.isDebugEnabled()) {
-					logger.debug( "Processed : " + remove );
+					logger.debug( "Processed : {}", remove );
 				}
 			} else {
 				if (flush && !seq.isEmpty() || seq.size() >= softLimit) {
 					Map.Entry<K, V> first = seq.pollFirstEntry();
 					if (first != null) {
 						if (logger.isDebugEnabled()) {
-							logger.debug( "Processed[SkipAt] : " + first.getValue());
+							logger.debug( "Processed[SkipAt] : {}" , first.getValue());
 						}
 						if (this.skippedKeys != null) this.skippedKeys.add(this.expectKey);
 						if (c != null)
@@ -231,7 +231,7 @@ public class Resequencer<K,V> {
 			}
 		}
 		if (logger.isDebugEnabled()) {
-			logger.debug( "++consume.time=" + (System.currentTimeMillis()-start));
+			logger.debug( "++consume.time={}" , (System.currentTimeMillis()-start));
 		}
 	}
 
