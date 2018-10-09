@@ -40,6 +40,8 @@ public class Main {
 
 	public static void main(String[] args) throws IOException {
 		Director director = new Director();
+		director.registerSubscriberChannel("foo");
+		director.registerPollableChannel("bar");
 		AbstractActor<?, ?>[] actors = new AbstractActor<?,?>[] {
 			new TransformActor(director),
 			new BatchIndexActor(director),

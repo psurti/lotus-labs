@@ -30,6 +30,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.integration.channel.AbstractPollableChannel;
 import org.springframework.integration.channel.AbstractSubscribableChannel;
 import org.springframework.integration.support.MutableMessage;
+import org.springframework.lang.Nullable;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHandler;
 import org.springframework.messaging.PollableChannel;
@@ -58,11 +59,9 @@ implements Flushable, PollableChannel, SubscribableChannel {
 	private static final Logger logger = LoggerFactory.getLogger(AbstractActor.class);
 
 	private boolean isRunning = false;
-	private AbstractSubscribableChannel subscriberChannel;
-	private AbstractPollableChannel pollableChannel;
 	private ExecutorService executor;
 	private int nThreads;
-
+	private final Actors actors;
 
 	static class PollReadyEvent extends GenericMessage<Object> {
 		private static final long serialVersionUID = 4304015635624712083L;
@@ -86,7 +85,8 @@ implements Flushable, PollableChannel, SubscribableChannel {
 
 
 	public AbstractActor(Director director) {
-		director.checkActor(this);
+		this.actors = director.getActors();
+		this.actors.checkActor(this);
 		nThreads = 1;
 	}
 
@@ -98,9 +98,7 @@ implements Flushable, PollableChannel, SubscribableChannel {
 		return this.nThreads;
 	}
 
-	public void init(Director director) {
-		this.subscriberChannel = director.getPublishScubscriberChannel();
-		this.pollableChannel = (director.getPollableHandlers().isEmpty()) ? null : director.getDefaultPollableChannel();
+	public void init() {
 		final String threadName = getClass().getSimpleName();
 		if (nThreads > 0) {
 			this.executor = Executors.newFixedThreadPool(nThreads, new ThreadFactory() {
@@ -137,31 +135,53 @@ implements Flushable, PollableChannel, SubscribableChannel {
 		}
 	}
 
-	public boolean put(Message<?> message) {
-		if (pollableChannel != null)
-			return pollableChannel.send(message);
+
+	public boolean put(String channelName, Message<?> message) {
+		AbstractPollableChannel channel = this.actors.getPollableChannel(channelName);
+		if (channel != null)
+			return channel.send(message);
 		return false;
 	}
 
+	public boolean put(String channelName, Message<?> message, long timeout) {
+		AbstractPollableChannel channel = this.actors.getPollableChannel(channelName);
+		if (channel != null)
+			return channel.send(message, timeout);
+		return false;
+	}
+
+	public boolean put(Message<?> message) {
+		return put(Actors.DEFAULT_CHANNEL_NAME, message );
+	}
+
 	public boolean put(Message<?> message, long timeout) {
-		if (pollableChannel != null)
-			return pollableChannel.send(message, timeout);
+		return put(Actors.DEFAULT_CHANNEL_NAME, message, timeout);
+	}
+
+
+	public boolean send(String channelName, Message<?> message) {
+		AbstractSubscribableChannel channel = this.actors.getSubscriberChannel(channelName);
+		if (channel != null)
+			return channel.send(message);
+		return false;
+	}
+
+	public boolean send(String channelName, Message<?> message, long timeout) {
+		AbstractSubscribableChannel channel = this.actors.getSubscriberChannel(channelName);
+		if (channel != null)
+			return channel.send(message, timeout);
 		return false;
 	}
 
 
 	@Override
 	public boolean send(Message<?> message) {
-		if (subscriberChannel != null)
-			return subscriberChannel.send(message);
-		return false;
+		return send(Actors.DEFAULT_CHANNEL_NAME, message);
 	}
 
 	@Override
 	public boolean send(Message<?> message, long timeout) {
-		if (subscriberChannel != null)
-			return subscriberChannel.send(message, timeout);
-		return false;
+		return send(Actors.DEFAULT_CHANNEL_NAME, message, timeout);
 	}
 
 	@Override
@@ -184,34 +204,56 @@ implements Flushable, PollableChannel, SubscribableChannel {
 		return isRunning;
 	}
 
+	public boolean subscribe(String channelName,MessageHandler handler) {
+		AbstractSubscribableChannel channel = this.actors.getSubscriberChannel(channelName);
+		if (channel != null)
+			return channel.subscribe(handler);
+		return false;
+	}
+
+	public boolean unsubscribe(String channelName, MessageHandler handler) {
+		AbstractSubscribableChannel channel = this.actors.getSubscriberChannel(channelName);
+		if (channel != null)
+			return channel.unsubscribe(handler);
+		return false;
+	}
+
 	@Override
 	public boolean subscribe(MessageHandler handler) {
-		if (subscriberChannel != null)
-			return subscriberChannel.subscribe(handler);
-		return false;
+		return subscribe(Actors.DEFAULT_CHANNEL_NAME, handler);
 	}
 
 	@Override
 	public boolean unsubscribe(MessageHandler handler) {
-		if (subscriberChannel != null)
-			return subscriberChannel.unsubscribe(handler);
-		return false;
+		return unsubscribe(Actors.DEFAULT_CHANNEL_NAME, handler);
 	}
 
-	@Override
-	public Message<?> receive(long timeout) {
-		if (pollableChannel != null) {
+	@Nullable
+	public Message<?> receive(String channelName, long timeout) {
+		AbstractPollableChannel channel = this.actors.getPollableChannel(channelName);
+		if (channel != null) {
 			if (!(this instanceof PollableHandler)) {
 				throw new IllegalStateException("Actor must implement " + PollableHandler.class.getName());
 			}
-			return pollableChannel.receive(timeout);
+			return channel.receive(timeout);
 		}
 		return null;
 	}
 
+	@Nullable
+	public Message<?> receive(String channelName) {
+		return receive(channelName, -1);
+	}
+
+
+	@Override
+	public Message<?> receive(long timeout) {
+		return receive(Actors.DEFAULT_CHANNEL_NAME, timeout);
+	}
+
 	@Override
 	public Message<?> receive() {
-		return receive(-1);
+		return receive(Actors.DEFAULT_CHANNEL_NAME);
 	}
 
 	@Override
