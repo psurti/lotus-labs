@@ -23,7 +23,6 @@ import java.io.Flushable;
 import java.io.IOException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadFactory;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -43,8 +42,12 @@ import com.lotuslabs.actors.actions.Action;
 /**
  * The base class of all actors. An actor is action
  * with additional capabilties like inter-action communications
- * with pollaable and pub-sub channels
- *
+ * with pollaable, pub-sub channels and ability to execute
+ * actions on single or multiple threads.
+ * <p>
+ * Each actor has a default subscriber and pollable channel as
+ * well as a dedicated thread to do its job
+ * <p>
  * An actor that consumes events via subscription implments
  * {@link MessageHandler} while one that consumes events via
  * a polling mechanism (calls {@link AbstractActor#receive()}
@@ -52,6 +55,12 @@ import com.lotuslabs.actors.actions.Action;
  *
  * @author psurti
  *
+ */
+/**
+ * @author psurti
+ *
+ * @param <I>
+ * @param <O>
  */
 public abstract class AbstractActor<I,O> extends Action<I,O>
 implements Flushable, PollableChannel, SubscribableChannel {
@@ -63,15 +72,25 @@ implements Flushable, PollableChannel, SubscribableChannel {
 	private int nThreads;
 	private final Actors actors;
 
-	static class PollReadyEvent extends GenericMessage<Object> {
+	/*
+	 * Queue is ready for poll signal
+	 */
+	public static class PollReadyEvent extends GenericMessage<Object> {
 		private static final long serialVersionUID = 4304015635624712083L;
 		public PollReadyEvent() {
 			super(new Object());
 		}
 	}
+	/**
+	 * A {@code PollReadyEvent} can be used for notifying
+	 * a {@link PollableHandler} so that it can receive
+	 * call to get the data from a queue
+	 */
+
 	public static final PollReadyEvent POLL_READY_EVENT = new PollReadyEvent();
+
 	/*
-	 * End-Of-Stream Event
+	 * End of stream is reached signal
 	 */
 	public static class EOSEvent extends MutableMessage<Object> {
 		public static final String POISSON_PILL = "POISSON_PILL";
@@ -81,37 +100,106 @@ implements Flushable, PollableChannel, SubscribableChannel {
 			this.getHeaders().put(POISSON_PILL, new Object());
 		}
 	}
+	/**
+	 * A actor can be notified that the data stream has
+	 * ended
+	 */
 	public static final EOSEvent EOS_EVENT = new EOSEvent();
 
 
+	/**
+	 * Construct an actor using a director
+	 *
+	 * @param director
+	 */
 	public AbstractActor(Director director) {
 		this.actors = director.getActors();
 		this.actors.checkActor(this);
 		nThreads = 1;
 	}
 
+	/**
+	 * By default every actor is decicated
+	 * a single thread to execute its action.
+	 * {@link #nThreads = 1}. If an actor
+	 * works on the caller thread than a decicated
+	 * thread maybe not be necessary (0)
+	 *
+	 * @param nThreads 0 for no actor thread 1 is default
+	 */
 	public void setNThreads(int nThreads) {
 		this.nThreads = nThreads;
 	}
 
+	/**
+	 * Returns the number of dedicated threads
+	 * associated with this actor
+	 *
+	 * @return number of threads
+	 */
 	public int getNThreads() {
 		return this.nThreads;
 	}
 
-	public void init() {
+	/**
+	 * Initializes this actor
+	 * Part of the initializes includes
+	 * setting up the thread pool associated
+	 * with the number of threads {@link #nThreads}
+	 */
+	void init() {
 		final String threadName = getClass().getSimpleName();
 		if (nThreads > 0) {
-			this.executor = Executors.newFixedThreadPool(nThreads, new ThreadFactory() {
-				@Override
-				public Thread newThread(Runnable r) {
-					Thread thr = new Thread(r);
-					thr.setName( threadName + thr.getName() );
-					return thr;
-				}
+			this.executor = Executors.newFixedThreadPool(nThreads, r -> {
+				Thread thr = new Thread(r);
+				thr.setName( threadName + thr.getName() );
+				return thr;
 			});
 		}
 	}
 
+	/**
+	 * Start this actor
+	 */
+	@Override
+	public void start() {
+		logger.info("Started {}", getClass().getName());
+	}
+
+	/**
+	 * Stop this actor
+	 */
+	@Override
+	public void stop() {
+		logger.info("Attempting to stop {}" , getClass().getName());
+		send(EOS_EVENT);
+		if (this.executor != null) {
+			this.executor.shutdownNow();
+		}
+		logger.info("Stopped {} {}",  getClass().getName(), isRunning);
+	}
+
+	/**
+	 * Is this actor running
+	 */
+	@Override
+	public boolean isRunning() {
+		return isRunning;
+	}
+
+	/**
+	 * Execute a method call in a {@link Runnable} on all the threads
+	 * on this actor.
+	 *
+	 * <p>
+	 * If {@link #nThreads} = 0 then it will execute this action on
+	 * the current thread.
+	 * <p>
+	 * If {@link #nThreads} > 0 then it will start all threads but
+	 * execute the action on available thread
+	 *
+	 * @param r is a runnable performs an execution call
+	 */
 	protected void invokeAll(Runnable r) {
 		if (this.nThreads == 0) {
 			r.run();
@@ -124,7 +212,17 @@ implements Flushable, PollableChannel, SubscribableChannel {
 		}
 	}
 
-
+	/**
+	 * Execute a method in a {@link Runnable} on this actor on a
+	 * thread pool thread this actor owns. It assumes only 1 thread
+	 * is available.
+	 *
+	 * <p>
+	 * If {@link #nThreads} = 0 then it will execute this action on
+	 * the current thread.
+	 *
+	 * @param r is a runnable performs an execution call
+	 */
 	protected void invoke(Runnable r) {
 		if (this.nThreads == 0) {
 			r.run();
@@ -135,101 +233,168 @@ implements Flushable, PollableChannel, SubscribableChannel {
 		}
 	}
 
-
-	public boolean put(String channelName, Message<?> message) {
-		AbstractPollableChannel channel = this.actors.getPollableChannel(channelName);
-		if (channel != null)
-			return channel.send(message);
-		return false;
-	}
-
-	public boolean put(String channelName, Message<?> message, long timeout) {
-		AbstractPollableChannel channel = this.actors.getPollableChannel(channelName);
-		if (channel != null)
-			return channel.send(message, timeout);
-		return false;
-	}
-
-	public boolean put(Message<?> message) {
-		return put(Actors.DEFAULT_CHANNEL_NAME, message );
-	}
-
-	public boolean put(Message<?> message, long timeout) {
-		return put(Actors.DEFAULT_CHANNEL_NAME, message, timeout);
-	}
-
-
-	public boolean send(String channelName, Message<?> message) {
-		AbstractSubscribableChannel channel = this.actors.getSubscriberChannel(channelName);
-		if (channel != null)
-			return channel.send(message);
-		return false;
-	}
-
-	public boolean send(String channelName, Message<?> message, long timeout) {
-		AbstractSubscribableChannel channel = this.actors.getSubscriberChannel(channelName);
-		if (channel != null)
-			return channel.send(message, timeout);
-		return false;
-	}
-
-
+	/**
+	 * Subscribe the {@link MessageHandler} handler
+	 * on the default subscriber channel {@link Actors#DEFAULT_CHANNEL_NAME}
+	 */
 	@Override
-	public boolean send(Message<?> message) {
-		return send(Actors.DEFAULT_CHANNEL_NAME, message);
+	public boolean subscribe(MessageHandler handler) {
+		return subscribe(Actors.DEFAULT_CHANNEL_NAME, handler);
 	}
 
-	@Override
-	public boolean send(Message<?> message, long timeout) {
-		return send(Actors.DEFAULT_CHANNEL_NAME, message, timeout);
-	}
-
-	@Override
-	public void start() {
-		logger.info("Started {}", getClass().getName());
-	}
-
-	@Override
-	public void stop() {
-		logger.info("Attempting to stop {}" , getClass().getName());
-		send(EOS_EVENT);
-		if (this.executor != null) {
-			this.executor.shutdownNow();
-		}
-		logger.info("Stopped {} {}",  getClass().getName(), isRunning);
-	}
-
-	@Override
-	public boolean isRunning() {
-		return isRunning;
-	}
-
-	public boolean subscribe(String channelName,MessageHandler handler) {
+	/**
+	 * Subscribe the {@link MessageHandler} handler
+	 * on a custom channel name
+	 *
+	 * @param channelName - the name of the channel
+	 * @param handler - the message channel handler
+	 * @return true if successful
+	 */
+	protected boolean subscribe(String channelName,MessageHandler handler) {
 		AbstractSubscribableChannel channel = this.actors.getSubscriberChannel(channelName);
 		if (channel != null)
 			return channel.subscribe(handler);
 		return false;
 	}
 
-	public boolean unsubscribe(String channelName, MessageHandler handler) {
+	/**
+	 * Unsubscribe the {@link MessageHandler} handler
+	 * for the custom subscriber channel name
+	 *
+	 * @param channelName - the message channel
+	 * @param handler - the message channel handler
+	 * @return true if successful
+	 */
+	protected boolean unsubscribe(String channelName, MessageHandler handler) {
 		AbstractSubscribableChannel channel = this.actors.getSubscriberChannel(channelName);
 		if (channel != null)
 			return channel.unsubscribe(handler);
 		return false;
 	}
 
-	@Override
-	public boolean subscribe(MessageHandler handler) {
-		return subscribe(Actors.DEFAULT_CHANNEL_NAME, handler);
-	}
-
+	/**
+	 * Unsubscribe the {@link MessageHandler} handler
+	 * on the default subscriber channel {@link Actors#DEFAULT_CHANNEL_NAME}
+	 */
 	@Override
 	public boolean unsubscribe(MessageHandler handler) {
 		return unsubscribe(Actors.DEFAULT_CHANNEL_NAME, handler);
 	}
 
+	/**
+	 * Send a message to a specific channel name on a subscriber
+	 * channel
+	 *
+	 * @param channelName - the name of the channel
+	 * @param message - the message to send
+	 * @return true if successful
+	 */
+	protected boolean send(String channelName, Message<?> message) {
+		AbstractSubscribableChannel channel = this.actors.getSubscriberChannel(channelName);
+		if (channel != null)
+			return channel.send(message);
+		return false;
+	}
+
+	/**
+	 * Send a message to a specific channel name with timeout
+	 *
+	 * @param channelName - the name of the channel
+	 * @param message - the message to send
+	 * @param timeout - the time to wait until return
+	 * @return true if successful
+	 */
+	protected boolean send(String channelName, Message<?> message, long timeout) {
+		AbstractSubscribableChannel channel = this.actors.getSubscriberChannel(channelName);
+		if (channel != null)
+			return channel.send(message, timeout);
+		return false;
+	}
+
+	/**
+	 * Send m message on the default subscriber channel
+	 * {@link Actors#DEFAULT_CHANNEL_NAME}
+	 * @param message - the message to send
+	 * @return true if successful
+	 */
+	@Override
+	public boolean send(Message<?> message) {
+		return send(Actors.DEFAULT_CHANNEL_NAME, message);
+	}
+
+	/**
+	 * Send a message on the default subscriber channel
+	 * {@link Actors#DEFAULT_CHANNEL_NAME}
+	 * @param message - the message to send
+	 * @param timeout - the time to wait until return
+	 * @return true if successful
+	 */
+	@Override
+	public boolean send(Message<?> message, long timeout) {
+		return send(Actors.DEFAULT_CHANNEL_NAME, message, timeout);
+	}
+
+	/**
+	 * Send a message on a custom channel name on a pollable
+	 * channel
+	 * @param channelName - the name of the channel
+	 * @param message - the message to send
+	 * @return true if successful
+	 */
+	protected boolean put(String channelName, Message<?> message) {
+		AbstractPollableChannel channel = this.actors.getPollableChannel(channelName);
+		if (channel != null)
+			return channel.send(message);
+		return false;
+	}
+
+	/**
+	 * Send a message on a custom channel name on a pollable
+	 * channel
+	 * @param channelName - the name of the channel
+	 * @param message - the message to send
+	 * @param timeout - the time to wait until return
+	 * @return true if successful
+	 */
+	protected boolean put(String channelName, Message<?> message, long timeout) {
+		AbstractPollableChannel channel = this.actors.getPollableChannel(channelName);
+		if (channel != null)
+			return channel.send(message, timeout);
+		return false;
+	}
+
+	/**
+	 * Send a message on the default channel name {@link Actors#DEFAULT_CHANNEL_NAME}
+	 * on a pollable channel
+	 * @param channelName - the name of the channel
+	 * @param message - the message to send
+	 * @return true if successful
+	 */
+	protected boolean put(Message<?> message) {
+		return put(Actors.DEFAULT_CHANNEL_NAME, message );
+	}
+
+	/**
+	 * Send a message on the default channel name {@link Actors#DEFAULT_CHANNEL_NAME}
+	 * on a pollable channel
+	 * @param channelName - the name of the channel
+	 * @param message - the message to send
+	 * @param timeout - the time to wait until return
+	 * @return true if successful
+	 */
+	protected boolean put(Message<?> message, long timeout) {
+		return put(Actors.DEFAULT_CHANNEL_NAME, message, timeout);
+	}
+
+	/**
+	 * Poll the message from the queue for a custom channel name
+	 *
+	 * @param channelName - the name of the channel
+	 * @param timeout - the time to wait until return
+	 * @return the message from the queue
+	 */
 	@Nullable
-	public Message<?> receive(String channelName, long timeout) {
+	protected Message<?> receive(String channelName, long timeout) {
 		AbstractPollableChannel channel = this.actors.getPollableChannel(channelName);
 		if (channel != null) {
 			if (!(this instanceof PollableHandler)) {
@@ -240,22 +405,45 @@ implements Flushable, PollableChannel, SubscribableChannel {
 		return null;
 	}
 
+	/**
+	 * Poll the message from the queue for a custom channel name
+	 *
+	 * @param channelName - the name of the channel
+	 * @return the message from the queue
+	 */
 	@Nullable
-	public Message<?> receive(String channelName) {
+	protected Message<?> receive(String channelName) {
 		return receive(channelName, -1);
 	}
 
-
+	/**
+	 * Poll the message from the default queue channel
+	 * {@link Actors#DEFAULT_CHANNEL_NAME}
+	 *
+	 * @param channelName - the name of the channel
+	 * @param timeout - the time to wait until return
+	 * @return the message from the queue
+	 */
 	@Override
 	public Message<?> receive(long timeout) {
 		return receive(Actors.DEFAULT_CHANNEL_NAME, timeout);
 	}
 
+	/**
+	 * Poll the message from the default queue channel
+	 * {@link Actors#DEFAULT_CHANNEL_NAME}
+	 *
+	 * @param channelName - the name of the channel
+	 * @return the message from the queue
+	 */
 	@Override
 	public Message<?> receive() {
 		return receive(Actors.DEFAULT_CHANNEL_NAME);
 	}
 
+	/**
+	 * Flush any remaining pending work
+	 */
 	@Override
 	public void flush() throws IOException {
 		//no flusing

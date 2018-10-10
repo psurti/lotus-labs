@@ -33,12 +33,16 @@ import org.springframework.integration.channel.RendezvousChannel;
 import com.lotuslabs.actors.PollableHandler;
 
 /**
+ * Communication Channels for all Actors
+ *
  * @author psurti
  * queue:default?size=200
  */
 public class Actors {
 
 	public static final String DEFAULT_CHANNEL_NAME = "default";
+
+	private static final String INVALID_CHANNEL_NAME = "Invalid channelName";
 	private final Map<String,AbstractSubscribableChannel> allSubscriberChannels;
 	private final Map<String,AbstractPollableChannel> allPollableChannels;
 	private final Set<PollableHandler> pollableHandlers;
@@ -54,59 +58,113 @@ public class Actors {
 		this.registerPollableChannel(DEFAULT_CHANNEL_NAME);
 	}
 
-
-	public void checkActor(AbstractActor<?,?> actor) {
+	/**
+	 * Check Actor for PollableHandlers
+	 * @param actor
+	 */
+	void checkActor(AbstractActor<?,?> actor) {
 		if (actor instanceof PollableHandler)
 			pollableHandlers.add((PollableHandler)actor);
 	}
 
-
-	public void registerSubscriberChannel(String channelName) {
+	/**
+	 * Register a subscriber channel
+	 *
+	 * @param channelName - name of the channel
+	 */
+	void registerSubscriberChannel(String channelName) {
+		if (channelName == null)
+			throw new IllegalArgumentException(INVALID_CHANNEL_NAME);
 		AbstractSubscribableChannel publishSubscriberChannel = new PublishSubscribeChannel();
 		publishSubscriberChannel.setComponentName(channelName);
 		this.allSubscriberChannels.put(channelName, publishSubscriberChannel);
 	}
 
+	/**
+	 * Register a different default subscriber channel
+	 *
+	 * @param channel - a configured subscriber channel
+	 */
+	void registerDefaultSubscriberChannel(AbstractSubscribableChannel channel) {
+		if (channel != null)
+			this.allSubscriberChannels.put(DEFAULT_CHANNEL_NAME, channel);
+	}
 
+	/**
+	 * Register a different default pollable channel
+	 *
+	 * @param channel - configured pollable channel
+	 */
+	void registerDefaultPollableChannel(	AbstractPollableChannel channel ) {
+		if (channel != null)
+			this.allPollableChannels.put(DEFAULT_CHANNEL_NAME, channel);
+	}
 
-	public void registerPollableChannel(String channelName) {
+	/**
+	 * Register a custom named Pollable channel
+	 *
+	 * @param channelName - name of the channel
+	 */
+	void registerPollableChannel(String channelName) {
+		if (channelName == null)
+			throw new IllegalArgumentException(INVALID_CHANNEL_NAME);
+
 		AbstractPollableChannel pollableChannel = new RendezvousChannel();
 		pollableChannel.setComponentName(channelName);
 		this.allPollableChannels.put(channelName, pollableChannel);
 	}
 
-
-	public Set<PollableHandler> getPollableHandlers() {
+	/**
+	 * Return all the pollable receiver handlers
+	 *
+	 * @return a set of pollable handlers
+	 */
+	Set<PollableHandler> getPollableHandlers() {
 		return Collections.unmodifiableSet(this.pollableHandlers);
 	}
 
-	public AbstractSubscribableChannel getDefaultSubscriberChannel() {
+	/**
+	 * Return the default subscriber channel
+	 *
+	 * @return default subscriber channel
+	 */
+	AbstractSubscribableChannel getDefaultSubscriberChannel() {
 		return getSubscriberChannel(DEFAULT_CHANNEL_NAME);
 	}
 
-	public AbstractPollableChannel getDefaultPollableChannel() {
+	/**
+	 * Return the default pollable channel
+	 *
+	 * @return default pollable channel
+	 */
+	AbstractPollableChannel getDefaultPollableChannel() {
 		return getPollableChannel(DEFAULT_CHANNEL_NAME);
 	}
 
 	/**
-	 * Return a subscriber channel given a channel name
+	 * Return a custom-named subscriber channel
 	 *
-	 * @return subscriberChannel
+	 * @return subscriberChannel associated to the channel name
 	 */
-	public AbstractSubscribableChannel getSubscriberChannel(String channelName) {
+	AbstractSubscribableChannel getSubscriberChannel(String channelName) {
+		if (channelName == null)
+			throw new IllegalArgumentException(INVALID_CHANNEL_NAME);
+
 		AbstractSubscribableChannel ret = allSubscriberChannels.get(channelName);
 		if (ret == null)
 			throw new IllegalArgumentException("Unknown channel - Please register subscriber channel:" + channelName);
 		return ret;
 	}
 
-
 	/**
-	 * Return a pollable channel given a channel name
+	 * Return a custom-named pollable channel
 	 *
-	 * @return pollableChannel
+	 * @return pollableChannel associated to the channel name
 	 */
-	public AbstractPollableChannel getPollableChannel(String channelName) {
+	AbstractPollableChannel getPollableChannel(String channelName) {
+		if (channelName == null)
+			throw new IllegalArgumentException(INVALID_CHANNEL_NAME);
+
 		//XXX need to check by channel names as opposed to any pollablehandler
 		if (getPollableHandlers().isEmpty())
 			return null;
@@ -116,6 +174,5 @@ public class Actors {
 			throw new IllegalArgumentException("Unknown channel - Please register pollable channel:" + channelName);
 		return ret;
 	}
-
 
 }
