@@ -55,11 +55,6 @@ import com.lotuslabs.actors.actions.Action;
  * <bold>must</bold> implment {@link PollableHandler}
  *
  * @author psurti
- *
- */
-/**
- * @author psurti
- *
  * @param <I>
  * @param <O>
  */

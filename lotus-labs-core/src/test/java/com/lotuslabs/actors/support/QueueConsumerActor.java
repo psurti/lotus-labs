@@ -11,6 +11,12 @@ import org.springframework.messaging.MessagingException;
 
 import com.lotuslabs.actors.PollableHandler;
 
+/**
+ * Data Consumer
+ *
+ * @author psurti
+ *
+ */
 public class QueueConsumerActor extends AbstractActor<String,Void> implements PollableHandler, MessageHandler {
 
 	private static final Logger logger = LoggerFactory.getLogger(QueueConsumerActor.class);

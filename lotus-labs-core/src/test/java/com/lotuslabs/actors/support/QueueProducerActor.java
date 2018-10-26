@@ -12,6 +12,12 @@ import org.springframework.messaging.support.GenericMessage;
 
 import com.lotuslabs.actors.support.Routers.ChannelMapping;
 
+/**
+ * Data Producer
+ *
+ * @author psurti
+ *
+ */
 public class QueueProducerActor extends AbstractActor<String,Void> {
 
 	private static final Logger logger = LoggerFactory.getLogger(QueueProducerActor.class);

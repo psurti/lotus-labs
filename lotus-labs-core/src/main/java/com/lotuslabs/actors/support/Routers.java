@@ -10,6 +10,12 @@ import org.springframework.messaging.core.DestinationResolver;
 
 import com.lotuslabs.actors.support.filter.CustomExpressionEvaluatingSelector;
 
+/**
+ * Available Routers
+ *
+ * @author psurti
+ *
+ */
 public class Routers {
 
 	private final Actors actors;
