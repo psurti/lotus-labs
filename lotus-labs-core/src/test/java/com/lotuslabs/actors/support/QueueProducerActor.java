@@ -51,9 +51,8 @@ public class QueueProducerActor extends AbstractActor<String,Void> {
 			logger.info("send message: {}", v);
 			//			send(ROUTER1_CHANNEL, new GenericMessage<>(v + ":ROUTER1"));
 			//			send(ROUTER2_CHANNEL, new GenericMessage<>(v + ":ROUTER2"));
-			send(router1, new GenericMessage<>(v+":ROUTER"), 0);
-			//			put(msg);
-			//			put(msg);
+			send(router3, new GenericMessage<>(v+":ROUTER"), 0);
+			put(msg);
 
 			/*
 			MessageFilter filter = new MessageFilter(message ->

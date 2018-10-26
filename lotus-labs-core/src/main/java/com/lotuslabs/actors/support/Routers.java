@@ -106,15 +106,4 @@ public class Routers {
 		}
 		return router;
 	}
-
-	/*public IntegrationFlow routerFlow() {
-		return IntegrationFlows.from("routingChannel")
-				.routeToRecipients(r -> r
-						.applySequence(true)
-						.ignoreSendFailures(true)
-						.recipient("channel1")
-						.recipient("channel2")
-						.recipient("channel3")
-						.sendTimeout(1_234L)).get();
-	}*/
 }

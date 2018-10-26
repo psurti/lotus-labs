@@ -56,14 +56,14 @@ public class QueueConsumerActor extends AbstractActor<String,Void> implements Po
 			subscribe(ROUTER2_CHANNEL, new RxChannelHandler(this, ROUTER2_CHANNEL));
 			logger.info("Subscribed on " + ROUTER2_CHANNEL);
 		}
-		//		subscribe(this); //last stmt for safer
+		subscribe(this); //last stmt for safer
 
 	}
 
 	@Override
 	public void stop() {
 		super.stop();
-		//		unsubscribe(this);
+		unsubscribe(this);
 	}
 
 	@Override
