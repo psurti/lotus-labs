@@ -28,6 +28,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.integration.channel.AbstractPollableChannel;
 import org.springframework.integration.channel.AbstractSubscribableChannel;
+import org.springframework.integration.router.AbstractMessageRouter;
 import org.springframework.integration.support.MutableMessage;
 import org.springframework.lang.Nullable;
 import org.springframework.messaging.Message;
@@ -71,6 +72,7 @@ implements Flushable, PollableChannel, SubscribableChannel {
 	private ExecutorService executor;
 	private int nThreads;
 	private final Actors actors;
+	private final Routers routers;
 
 	/*
 	 * Queue is ready for poll signal
@@ -113,9 +115,10 @@ implements Flushable, PollableChannel, SubscribableChannel {
 	 * @param director
 	 */
 	public AbstractActor(Director director) {
-		this.actors = director.getActors();
-		this.actors.checkActor(this);
 		nThreads = 1;
+		this.actors = director.getActors();
+		this.routers = new Routers(director.getActors());
+		this.actors.checkActor(this); //safe as last stmt to avoid partial initialized objects
 	}
 
 	/**
@@ -142,6 +145,14 @@ implements Flushable, PollableChannel, SubscribableChannel {
 	}
 
 	/**
+	 * Returns the Routers to configure
+	 * @return Routers that can be configured
+	 */
+	protected Routers routers() {
+		return this.routers;
+	}
+
+	/**
 	 * Initializes this actor
 	 * Part of the initializes includes
 	 * setting up the thread pool associated
@@ -164,6 +175,8 @@ implements Flushable, PollableChannel, SubscribableChannel {
 	@Override
 	public void start() {
 		logger.info("Started {}", getClass().getName());
+		if (nThreads > 0) //call execute only if atleast 1 thread is dedicated
+			invokeAll(() -> execute((I) null));
 	}
 
 	/**
@@ -172,7 +185,6 @@ implements Flushable, PollableChannel, SubscribableChannel {
 	@Override
 	public void stop() {
 		logger.info("Attempting to stop {}" , getClass().getName());
-		send(EOS_EVENT);
 		if (this.executor != null) {
 			this.executor.shutdownNow();
 		}
@@ -309,6 +321,17 @@ implements Flushable, PollableChannel, SubscribableChannel {
 		if (channel != null)
 			return channel.send(message, timeout);
 		return false;
+	}
+
+	/**
+	 * Send a message to multiple channels based on a router with timeout
+	 * @param router - the different types of routers to use
+	 * @param message - the message to send
+	 * @param timeout - the time to wait until return
+	 */
+	protected void send(AbstractMessageRouter router, Message<?> message, long timeout) {
+		router.setSendTimeout(timeout);
+		router.handleMessage(message);
 	}
 
 	/**

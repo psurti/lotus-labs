@@ -31,12 +31,6 @@ public class BatchIndexActor extends AbstractActor<String,String> implements Pol
 	}
 
 	@Override
-	public void start() {
-		super.start();
-		invokeAll(()->execute((String)null));
-	}
-
-	@Override
 	public String execute(String item) {
 		Message<?> msg;
 		while ((msg = receive()) != null) {

@@ -28,12 +28,7 @@ public class TransformActor extends AbstractActor<String,String> implements Mess
 	public TransformActor(Director director) {
 		super(director);
 		this.setNThreads(0); //disable any threads
-	}
-
-	@Override
-	public void start() {
 		subscribe(this);
-		super.start();
 	}
 
 	@Override

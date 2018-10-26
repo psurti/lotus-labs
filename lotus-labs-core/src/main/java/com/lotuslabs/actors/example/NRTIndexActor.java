@@ -21,15 +21,8 @@ public class NRTIndexActor extends AbstractActor<String,String> implements Messa
 	public NRTIndexActor(Director director) {
 		super(director);
 		setNThreads(0); //set 0 if using local invoke call
-	}
-
-
-	@Override
-	public void start() {
 		subscribe(this);
-		super.start();
 	}
-
 
 	@Override
 	public void stop() {

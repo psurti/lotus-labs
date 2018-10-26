@@ -29,12 +29,6 @@ public class DBReadActor extends AbstractActor<String,String> {
 	}
 
 	@Override
-	public void start() {
-		super.start();
-		invokeAll(() -> execute((String) null));
-	}
-
-	@Override
 	public String execute(String item) {
 		logger.info("Executing {}" , DBReadActor.class.getSimpleName());
 		//Read database rows and notify/send

@@ -22,9 +22,12 @@ package com.lotuslabs.actors.support;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 
+import org.springframework.beans.factory.BeanFactory;
+import org.springframework.beans.factory.support.StaticListableBeanFactory;
 import org.springframework.integration.channel.AbstractPollableChannel;
 import org.springframework.integration.channel.AbstractSubscribableChannel;
 import org.springframework.integration.channel.PublishSubscribeChannel;
@@ -173,6 +176,13 @@ public class Actors {
 		if (ret == null)
 			throw new IllegalArgumentException("Unknown channel - Please register pollable channel:" + channelName);
 		return ret;
+	}
+
+	BeanFactory getBeanFactory() {
+		Map<String,Object> beans = new LinkedHashMap<>();
+		beans.putAll(Actors.this.allSubscriberChannels);
+		beans.putAll(Actors.this.allPollableChannels);
+		return new StaticListableBeanFactory(beans);
 	}
 
 }

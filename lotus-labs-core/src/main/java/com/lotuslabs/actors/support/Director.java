@@ -16,7 +16,6 @@ import com.lotuslabs.actors.PollableHandler;
  */
 public class Director {
 
-	@SuppressWarnings("unused")
 	private static final Logger logger = LoggerFactory.getLogger(Director.class);
 
 	private final Actors actors;
@@ -27,6 +26,7 @@ public class Director {
 	public Director() {
 		this.actors = new Actors();
 	}
+
 
 	/**
 	 * Return Actors
