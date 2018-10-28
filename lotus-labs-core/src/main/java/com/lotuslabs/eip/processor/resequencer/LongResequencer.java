@@ -13,26 +13,18 @@ public class LongResequencer<V> extends Resequencer<Long, V>{
 		super(softLimit, hardLimit, DEFAULT_COMPARATOR, DEFAULT_EXPECTOR);
 	}
 
-	private static final Comparator<Long> DEFAULT_COMPARATOR = new Comparator<Long>() {
-		@Override
-		public int compare(Long o1, Long o2) {
-			/*
-			 * (o1==o2):-1,(o1 < o2):-1 ,(o1 > o2):+1
-			 */
-			return Long.compare(o1, o2);
+	// (o1==o2):-1,(o1 < o2):-1 ,(o1 > o2):+1
+	private static final Comparator<Long> DEFAULT_COMPARATOR = (o1,o2) -> Long.compare(o1,o2);
+
+	static final SequenceSupplier<Long> DEFAULT_EXPECTOR = previous ->
+	{
+		//initial value
+		if (previous == null) {
+			return Long.valueOf(0);
 		}
+		return Long.valueOf(previous.longValue()+1);
 	};
 
-	private static final SequenceSupplier<Long> DEFAULT_EXPECTOR = new SequenceSupplier<Long>() {
-		@Override
-		public Long get(Long previous) {
-			//initial value
-			if (previous == null) {
-				return Long.valueOf(0);
-			}
-			return Long.valueOf(previous.longValue()+1);
-		}
-	};
 
 
 }

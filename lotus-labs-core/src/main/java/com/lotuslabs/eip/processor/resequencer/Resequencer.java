@@ -62,6 +62,7 @@ public class Resequencer<K,V> {
 	private ConcurrentSkipListMap<Integer,AtomicInteger> histo;
 	private int total = 0;
 	private int maxSeqSize =0;
+	private int delay = 0;
 
 	/**
 	 * Constructor
@@ -77,6 +78,10 @@ public class Resequencer<K,V> {
 		this.hardLimit = hardLimit;
 		this.softLimit = (hardLimit > 0) ? hardLimit : softLimit;
 		this.expectKey = this.expector.get(null);
+	}
+
+	public void setDelay(int delay) {
+		this.delay = delay;
 	}
 
 	/*
@@ -214,7 +219,7 @@ public class Resequencer<K,V> {
 					logger.debug( "Processed : {}", remove );
 				}
 			} else {
-				if (flush && !seq.isEmpty() || seq.size() >= softLimit) {
+				if ((flush) && !seq.isEmpty() || seq.size() >= softLimit) {
 					Map.Entry<K, V> first = seq.pollFirstEntry();
 					if (first != null) {
 						if (logger.isDebugEnabled()) {
@@ -226,6 +231,11 @@ public class Resequencer<K,V> {
 						this.expectKey = this.expector.get(first.getKey());
 					}
 				} else {
+					//					if (!flush && delay > 0)  {
+					//						long begin = System.nanoTime();
+					//						while(System.nanoTime() - begin < delay) {}
+					//						continue;
+					//					}
 					loop = false;
 				}
 			}
@@ -244,4 +254,27 @@ public class Resequencer<K,V> {
 	public void flush(Consumer<K,V> c) {
 		consume(c, true);
 	}
+
+	/**
+	 * @return the softLimit
+	 */
+	public int getSoftLimit() {
+		return softLimit;
+	}
+
+	/**
+	 * @return the hardLimit
+	 */
+	public int getHardLimit() {
+		return hardLimit;
+	}
+
+	/**
+	 * @return the delay
+	 */
+	public int getDelay() {
+		return delay;
+	}
+
+
 }

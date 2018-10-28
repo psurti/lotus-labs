@@ -5,6 +5,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
+import java.util.Random;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -76,6 +77,7 @@ public class LongResequencerTest {
 	private int hardLimit;
 	private boolean collectMetrics;
 	private long consumerDelayMS;
+	private int delay;
 
 	public LongResequencerTest() {
 	}
@@ -86,10 +88,14 @@ public class LongResequencerTest {
 		softLimit = 100;
 		hardLimit = 0;
 		consumerDelayMS = 0;
+		delay = 0;
 		consumed = new AtomicInteger(0);
 
 		r = new LongResequencer<>(softLimit, hardLimit);
-		//		collectMetrics = r.enableMetrics() != null;
+		if (delay > 0)
+			r.setDelay(delay);
+		collectMetrics = r.enableMetrics() != null;
+
 
 		InputStream resourceAsStream = new FileInputStream(
 				System.getProperty("user.dir") +
@@ -105,10 +111,11 @@ public class LongResequencerTest {
 		logger.info( val );
 		logger.info(String.format("%10s", name));
 		logger.info("intervalType: " + it.name() + " of "  + it.value());
-		logger.info("softLimit=" + softLimit);
-		logger.info("hardLimit=" + hardLimit);
+		logger.info("softLimit=" + r.getSoftLimit());
+		logger.info("hardLimit=" + r.getHardLimit());
 		logger.info("consumerDelay(ms)=" + consumerDelayMS);
 		logger.info("collectMetrics=" + collectMetrics);
+		logger.info("delay(producer)=" + r.getDelay());
 		logger.info( val );
 	}
 
@@ -155,9 +162,13 @@ public class LongResequencerTest {
 		logger.info( "Consumed:" + consumed.get());
 	}
 
+	/*
+	 * TimerTask every 10ms consumes data
+	 */
 	@Test
 	public void testConsumeTimer() throws IOException, InterruptedException {
 		it = IntervalType.FIXED_TIMER_MS;
+		delay = 100;
 		startTest("Consume with FIXED TIMER(ms) Task Thread");
 
 		Timer t = new Timer();
@@ -185,12 +196,7 @@ public class LongResequencerTest {
 		t.schedule(task, 0, it.val);
 
 		long start = System.currentTimeMillis();
-		for (String line : readLines) {
-			String[] pairs = line.split(":");
-			String value = pairs[1].trim();
-			Long key = Long.valueOf(value);
-			r.put(key, value);
-		}
+		readData(false);
 		state.set(State.PRODUCER_COMPLETED);
 		while (state.get() != State.CONSUMER_COMPLETED) {
 			Thread.sleep(10);
@@ -202,6 +208,33 @@ public class LongResequencerTest {
 		logger.info( "Consumed:" + consumed.get());
 	}
 
+	/*
+	 * Read Data
+	 */
+	private void readData(boolean injectDelay) throws InterruptedException {
+		Random rdm = new Random();
+		for (String line : readLines) {
+			String[] pairs = line.split(":");
+			String value = pairs[1].trim();
+			Long key = Long.valueOf(value);
+			r.put(key, value);
+			int vDelay = (getVariedDelay(rdm, injectDelay));
+			if (vDelay > 0) {
+				logger.info("Producer delay(ms):" + vDelay);
+				Thread.sleep(vDelay);
+			}
+		}
+	}
+
+	private int getVariedDelay(Random rdm, boolean boundedDelay) {
+		int val = rdm.nextInt((!boundedDelay) ? 1 : 5);
+		if (val == 2) val = 100;
+		if (val == 1 || val == 3 ) val = 50;
+		if (val == 0 || val == 4 ) val = 0;
+		return val;
+	}
+
+
 	@Test
 	/*
 	 * Two separate threads - one adds events and the other
@@ -209,6 +242,8 @@ public class LongResequencerTest {
 	 */
 	public void testConsumeNanoTimer() throws IOException, InterruptedException {
 		it = IntervalType.FIXED_TIME_NS;
+		delay = 100_000;
+		r.setDelay(delay);
 		startTest("Consume with FIXED TIMER(nano) Thread");
 		final AtomicReference<State> state = new AtomicReference<>(State.PRODUCER_STARTED);
 		final AtomicLong timer = new AtomicLong(System.nanoTime());
@@ -237,14 +272,7 @@ public class LongResequencerTest {
 		Thread thr = new Thread(task);
 		thr.start();
 		long start = System.currentTimeMillis();
-		for (String line : readLines) {
-			String[] pairs = line.split(":");
-			String value = pairs[1].trim();
-			Long key = Long.valueOf(value);
-			{
-				r.put(key, value);
-			}
-		}
+		readData(false);
 		state.set(State.PRODUCER_COMPLETED);
 		thr.join();
 		long etime = (System.currentTimeMillis()-start);
