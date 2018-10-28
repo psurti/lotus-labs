@@ -1,5 +1,6 @@
 package com.lotuslabs.actors.support;
 
+import org.springframework.integration.channel.AbstractMessageChannel;
 import org.springframework.integration.router.ErrorMessageExceptionTypeRouter;
 import org.springframework.integration.router.ExpressionEvaluatingRouter;
 import org.springframework.integration.router.HeaderValueRouter;
@@ -24,7 +25,16 @@ public class Routers {
 	public Routers(Actors actors) {
 		super();
 		this.actors = actors;
-		this.defaultResolver =  name -> actors.getSubscriberChannel(name);
+		this.defaultResolver =  name -> {
+			AbstractMessageChannel channel = actors.getSubscriberChannel(name, false);
+			if (channel == null) {
+				channel = actors.getPollableChannel(name, false);
+			}
+			if (channel == null)
+				throw new IllegalArgumentException("channel does not exist:" + name);
+
+			return channel;
+		};
 	}
 
 	static class ChannelMapping<K,V> {

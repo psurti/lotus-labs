@@ -150,11 +150,20 @@ public class Actors {
 	 * @return subscriberChannel associated to the channel name
 	 */
 	AbstractSubscribableChannel getSubscriberChannel(String channelName) {
+		return getSubscriberChannel(channelName, true);
+	}
+
+	/**
+	 * Return a custom-named subscriber channel
+	 *
+	 * @return subscriberChannel associated to the channel name
+	 */
+	AbstractSubscribableChannel getSubscriberChannel(String channelName, boolean throwException) {
 		if (channelName == null)
 			throw new IllegalArgumentException(INVALID_CHANNEL_NAME);
 
 		AbstractSubscribableChannel ret = allSubscriberChannels.get(channelName);
-		if (ret == null)
+		if (ret == null && throwException)
 			throw new IllegalArgumentException("Unknown channel - Please register subscriber channel:" + channelName);
 		return ret;
 	}
@@ -165,6 +174,15 @@ public class Actors {
 	 * @return pollableChannel associated to the channel name
 	 */
 	AbstractPollableChannel getPollableChannel(String channelName) {
+		return getPollableChannel(channelName, true);
+	}
+
+	/**
+	 * Return a custom-named pollable channel
+	 *
+	 * @return pollableChannel associated to the channel name
+	 */
+	AbstractPollableChannel getPollableChannel(String channelName, boolean throwException) {
 		if (channelName == null)
 			throw new IllegalArgumentException(INVALID_CHANNEL_NAME);
 
@@ -173,7 +191,7 @@ public class Actors {
 			return null;
 
 		AbstractPollableChannel ret = allPollableChannels.get(channelName);
-		if (ret == null)
+		if (ret == null && throwException)
 			throw new IllegalArgumentException("Unknown channel - Please register pollable channel:" + channelName);
 		return ret;
 	}

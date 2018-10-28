@@ -2,6 +2,7 @@ package com.lotuslabs.actors.support;
 
 import static com.lotuslabs.actors.support.MessageChannels.ROUTER1_CHANNEL;
 import static com.lotuslabs.actors.support.MessageChannels.ROUTER2_CHANNEL;
+import static com.lotuslabs.actors.support.MessageChannels.ROUTER3_CHANNEL;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,6 +47,7 @@ public class QueueConsumerActor extends AbstractActor<String,Void> implements Po
 		super(director);
 		director.registerSubscriberChannel(ROUTER1_CHANNEL);
 		director.registerSubscriberChannel(ROUTER2_CHANNEL);
+		director.registerPollableChannel(ROUTER3_CHANNEL);
 	}
 
 	/**
