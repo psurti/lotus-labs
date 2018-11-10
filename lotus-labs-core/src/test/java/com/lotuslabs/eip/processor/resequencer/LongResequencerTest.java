@@ -11,6 +11,7 @@ import java.util.TimerTask;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.locks.LockSupport;
 
 import org.junit.After;
 import org.junit.Before;
@@ -63,12 +64,7 @@ public class LongResequencerTest {
 			consumed.incrementAndGet();
 			if (consumerDelayMS == 0)
 				return;
-
-			try {
-				Thread.sleep(consumerDelayMS);
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
+			await(consumerDelayMS);
 		}
 	};
 	//parameters
@@ -199,7 +195,7 @@ public class LongResequencerTest {
 		readData(false);
 		state.set(State.PRODUCER_COMPLETED);
 		while (state.get() != State.CONSUMER_COMPLETED) {
-			Thread.sleep(10);
+			await(10);
 		}
 		long etime = (System.currentTimeMillis()-start);
 		t.cancel();
@@ -221,7 +217,7 @@ public class LongResequencerTest {
 			int vDelay = (getVariedDelay(rdm, injectDelay));
 			if (vDelay > 0) {
 				logger.info("Producer delay(ms):" + vDelay);
-				Thread.sleep(vDelay);
+				await(vDelay);
 			}
 		}
 	}
@@ -288,6 +284,11 @@ public class LongResequencerTest {
 		long hour = (durationInMillis / (1000 * 60 * 60)) % 24;
 		String time = String.format("%02dh:%02dm:%02d.%ds", hour, minute, second, millis);
 		logger.info("time taken:" + time);
+	}
+
+
+	private void await(long ms) {
+		LockSupport.parkUntil(System.currentTimeMillis()+ ms);
 	}
 
 	@After

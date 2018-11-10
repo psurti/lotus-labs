@@ -2,6 +2,10 @@ package com.lotuslabs.actors.support;
 
 import static com.lotuslabs.actors.support.MessageChannels.ROUTER1_CHANNEL;
 import static com.lotuslabs.actors.support.MessageChannels.ROUTER2_CHANNEL;
+import static com.lotuslabs.actors.support.MessageChannels.ROUTER3_CHANNEL;
+
+import java.util.HashMap;
+import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -11,6 +15,8 @@ import org.springframework.integration.router.RecipientListRouter;
 import org.springframework.messaging.support.GenericMessage;
 
 import com.lotuslabs.actors.support.Routers.ChannelMapping;
+import com.lotuslabs.eip.processor.resequencer.ResequencerQueueChannel;
+import com.lotuslabs.eip.processor.resequencer.SequenceSupplier;
 
 /**
  * Data Producer
@@ -44,6 +50,18 @@ public class QueueProducerActor extends AbstractActor<String,Void> {
 		router3 = routers().exprEvalRouter("payload",
 				new ChannelMapping<>("payload.matches('[A-M]17:ROUTER')", ROUTER1_CHANNEL),
 				new ChannelMapping<>("payload.matches('[N-Z]17:ROUTER')", ROUTER2_CHANNEL));
+
+		director.registerPollableChannel(ROUTER3_CHANNEL, new ResequencerQueueChannel(100, 0,
+				new SequenceSupplier<Long>() {
+
+			@Override
+			public Long get(Long current) {
+				if (current == null )
+					return Long.valueOf(0);
+				return Long.valueOf(current.longValue()+1);
+			}
+		}));
+
 	}
 
 	@Override
@@ -53,12 +71,16 @@ public class QueueProducerActor extends AbstractActor<String,Void> {
 		char end = 'Z';
 		for (int i = start; i <= end; i++) {
 			String v = (char)i + String.valueOf("17");
-			GenericMessage<String> msg = new GenericMessage<>(v);
+			Map<String,Object> headers = new HashMap<>();
+			headers.put("SID", Long.valueOf(i));
+			GenericMessage<String> msg = new GenericMessage<>(v, headers);
+
 			logger.info("send message: {}", v);
 			//			send(ROUTER1_CHANNEL, new GenericMessage<>(v + ":ROUTER1"));
 			//			send(ROUTER2_CHANNEL, new GenericMessage<>(v + ":ROUTER2"));
 			send(router1, new GenericMessage<>(v+":ROUTER"), 0);
-			put(msg);
+			//			put(msg);
+			put(ROUTER3_CHANNEL,new GenericMessage<>(v, headers));
 
 			/*
 			MessageFilter filter = new MessageFilter(message ->

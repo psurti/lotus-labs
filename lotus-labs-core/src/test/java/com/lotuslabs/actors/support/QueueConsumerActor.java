@@ -47,7 +47,7 @@ public class QueueConsumerActor extends AbstractActor<String,Void> implements Po
 		super(director);
 		director.registerSubscriberChannel(ROUTER1_CHANNEL);
 		director.registerSubscriberChannel(ROUTER2_CHANNEL);
-		director.registerPollableChannel(ROUTER3_CHANNEL);
+
 	}
 
 	/**
@@ -77,7 +77,7 @@ public class QueueConsumerActor extends AbstractActor<String,Void> implements Po
 	@Override
 	public Void execute(String item) {
 		Message<?> msg;
-		while ((msg = receive()) != null) {
+		while ((msg = receive(ROUTER3_CHANNEL)) != null) {
 			logger.info( "Received Payload: {} ", msg.getPayload() );
 			if (msg instanceof EOSEvent) {
 				logger.info("Received EOSEvent - flush & break-off-from-loop");
