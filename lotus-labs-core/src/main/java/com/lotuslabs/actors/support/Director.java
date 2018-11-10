@@ -74,6 +74,15 @@ public class Director {
 	}
 
 	/**
+	 * Register a custom named Pollable channel
+	 *
+	 * @param channelName - name of the channel
+	 */
+	public void registerPollableChannel(String channelName, AbstractPollableChannel channel) {
+		getActors().registerPollableChannel(channelName, channel);
+	}
+
+	/**
 	 * Return all the pollable receiver handlers
 	 *
 	 * @return a set of pollable handlers

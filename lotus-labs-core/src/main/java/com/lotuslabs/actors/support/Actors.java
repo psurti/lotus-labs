@@ -98,7 +98,7 @@ public class Actors {
 	 *
 	 * @param channel - configured pollable channel
 	 */
-	void registerDefaultPollableChannel(	AbstractPollableChannel channel ) {
+	void registerDefaultPollableChannel(AbstractPollableChannel channel ) {
 		if (channel != null)
 			this.allPollableChannels.put(DEFAULT_CHANNEL_NAME, channel);
 	}
@@ -113,6 +113,20 @@ public class Actors {
 			throw new IllegalArgumentException(INVALID_CHANNEL_NAME);
 
 		AbstractPollableChannel pollableChannel = new RendezvousChannel();
+		pollableChannel.setComponentName(channelName);
+		this.allPollableChannels.put(channelName, pollableChannel);
+	}
+
+	/**
+	 * Register a custom named Pollable channel
+	 *
+	 * @param channelName - name of the channel
+	 */
+	public void registerPollableChannel(String channelName, AbstractPollableChannel channel) {
+		if (channelName == null)
+			throw new IllegalArgumentException(INVALID_CHANNEL_NAME);
+
+		AbstractPollableChannel pollableChannel = channel;
 		pollableChannel.setComponentName(channelName);
 		this.allPollableChannels.put(channelName, pollableChannel);
 	}
@@ -202,5 +216,7 @@ public class Actors {
 		beans.putAll(Actors.this.allPollableChannels);
 		return new StaticListableBeanFactory(beans);
 	}
+
+
 
 }

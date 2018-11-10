@@ -4,7 +4,7 @@ package com.lotuslabs.eip.processor.resequencer;
  * Interface that
  *
  */
-interface SequenceSupplier<K> {
+public interface SequenceSupplier<K> {
 
 	/**
 	 * Returns the next
